@@ -7,6 +7,7 @@ import (
 	"log"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func Register(gp *gin.RouterGroup) {
@@ -50,5 +51,7 @@ func Subscribe(c *gin.Context) {
 
 	}
 	subscriber.Update(c.ClientIP(), rooms)
+	// 設置如果五分鐘後尚未連線 WebSocket 就清除訂閱記憶
+	subscriber.ExpireAfter(c.ClientIP(), time.After(time.Minute*5))
 	c.IndentedJSON(200, rooms)
 }

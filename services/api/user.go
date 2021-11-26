@@ -1,6 +1,10 @@
 package api
 
 import (
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
 	"sync"
 )
 
@@ -24,14 +28,14 @@ func GetUserInfo(uid int64) (*UserInfo, error) {
 		return nil, err
 	}
 
-	var xresp XResp
+	var xResp XResp
 
-	if err := json.Unmarshal(body, &xresp); err != nil {
+	if err := json.Unmarshal(body, &xResp); err != nil {
 		return nil, err
 	}
 
-	if v1resp.Code != 0 {
-		return &UserInfo{XResp: xresp}, nil
+	if xResp.Code != 0 {
+		return &UserInfo{XResp: xResp}, nil
 	}
 
 	var userInfo UserInfo
@@ -45,7 +49,7 @@ func GetUserInfo(uid int64) (*UserInfo, error) {
 }
 
 func UserExist(uid int64) (bool, error) {
-	info, err := GetRoomInfo(uid)
+	res, err := GetUserInfo(uid)
 
 	if err != nil {
 		return false, err

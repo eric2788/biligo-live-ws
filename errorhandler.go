@@ -34,7 +34,6 @@ func ErrorHandler(c *gin.Context) {
 				Message: err.Error(),
 			}
 		}
-		// Put the error into response
 		c.IndentedJSON(parsedError.Code, parsedError)
 		c.Abort()
 		return

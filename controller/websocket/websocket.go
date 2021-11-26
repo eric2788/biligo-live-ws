@@ -8,9 +8,11 @@ import (
 	"github.com/gorilla/websocket"
 	live "github.com/iyear/biligo-live"
 	"log"
+	"sync"
+	"time"
 )
 
-var websocketTable map[string]*websocket.Conn
+var websocketTable = sync.Map{}
 
 func Register(gp *gin.RouterGroup) {
 	gp.GET("", OpenWebSocket)
@@ -24,7 +26,9 @@ func OpenWebSocket(c *gin.Context) {
 		_ = c.Error(err)
 		return
 	}
-	websocketTable[c.ClientIP()] = ws
+	websocketTable.Store(c.ClientIP(), ws)
+	// 中止五分鐘後清除訂閱記憶
+	subscriber.CancelExpire(c.ClientIP())
 }
 
 func handleBLiveMessage(room int64, info blive.LiveInfo, msg live.Msg) {
@@ -50,12 +54,15 @@ func handleBLiveMessage(room int64, info blive.LiveInfo, msg live.Msg) {
 }
 
 func writeMessage(ip string, data BLiveData) error {
-	con, ok := websocketTable[ip]
+	conn, ok := websocketTable.Load(ip)
 
 	if !ok {
 		log.Printf("用戶 %v 尚未連接到WS，略過發送。\n", ip)
 		return nil
 	}
+
+	con := conn.(*websocket.Conn)
+
 	byteData, err := json.Marshal(data)
 
 	if err != nil {
@@ -64,10 +71,11 @@ func writeMessage(ip string, data BLiveData) error {
 
 	if err = con.WriteMessage(websocket.TextMessage, byteData); err != nil {
 		switch err.(type) {
-		case *websocket.CloseError: // if socket closed
+		case *websocket.CloseError: // websocket 關閉
 			log.Printf("用戶 %v 已斷開WS連接。\n", ip)
-			delete(websocketTable, ip)
-			subscriber.Delete(ip)
+			websocketTable.Delete(ip)
+			// 等待五分鐘，如果五分鐘後沒有重連則刪除訂閱記憶
+			subscriber.ExpireAfter(ip, time.After(time.Minute*5))
 		default:
 			return err
 		}

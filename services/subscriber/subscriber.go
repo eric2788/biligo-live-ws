@@ -2,13 +2,45 @@ package subscriber
 
 import (
 	set "github.com/deckarep/golang-set"
+	"log"
 	"sync"
+	"time"
 )
 
 var subscribeMap = sync.Map{}
+var expireMap = sync.Map{}
 
 func Update(ip string, rooms []int64) {
 	subscribeMap.Store(ip, rooms)
+}
+
+func ExpireAfter(ip string, expired <-chan time.Time) {
+
+	connected := make(chan struct{})
+
+	go func() {
+		for {
+			select {
+			case <-expired:
+				log.Printf("%v 的訂閱已過期。\n", ip)
+				subscribeMap.Delete(ip)
+				return
+			case <-connected:
+				return
+			}
+		}
+	}()
+
+	expireMap.Store(ip, connected)
+}
+
+var void struct{}
+
+func CancelExpire(ip string) {
+	if connected, ok := expireMap.Load(ip); ok {
+		conn := connected.(chan struct{})
+		conn <- void
+	}
 }
 
 func Get(ip string) ([]int64, bool) {

@@ -47,7 +47,7 @@ func LaunchLiveServer(room int64, handle func(data LiveInfo, msg biligo.Msg)) (c
 		RoomId:   room,
 		UID:      data.Uid,
 		Title:    data.Title,
-		Name:     user.Name,
+		Name:     user.Data.Name,
 		Cover:    data.UserCover,
 		RealRoom: realId,
 	}
