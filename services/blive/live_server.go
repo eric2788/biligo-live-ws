@@ -31,11 +31,23 @@ func LaunchLiveServer(room int64, handle func(data LiveInfo, msg biligo.Msg)) (c
 	data := info.Data
 	realId := data.RoomId // 真正的房間號
 
+	user, err := api.GetUserInfo(data.Uid)
+
+	if err != nil {
+		log.Println("索取用戶資訊時出現錯誤: ", err)
+		return nil, err
+	}
+
+	if user.Data == nil {
+		log.Println("索取用戶資訊時出現錯誤: ", err)
+		return nil, errors.New(info.Message)
+	}
+
 	liveInfo := LiveInfo{
 		RoomId:   room,
 		UID:      data.Uid,
 		Title:    data.Title,
-		Name:     "",
+		Name:     user.Name,
 		Cover:    data.UserCover,
 		RealRoom: realId,
 	}

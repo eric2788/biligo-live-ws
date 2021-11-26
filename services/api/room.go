@@ -10,11 +10,11 @@ import (
 
 const RoomInfoApi string = "https://api.live.bilibili.com/room/v1/Room/get_info?room_id=%v"
 
-var caches = sync.Map{}
+var roomCaches = sync.Map{}
 
 func GetRoomInfo(room int64) (*RoomInfo, error) {
 
-	if res, ok := caches.Load(room); ok {
+	if res, ok := roomCaches.Load(room); ok {
 		return res.(*RoomInfo), nil
 	}
 
@@ -44,7 +44,7 @@ func GetRoomInfo(room int64) (*RoomInfo, error) {
 		return nil, err
 	}
 
-	caches.Store(room, &roomInfo)
+	roomCaches.Store(room, &roomInfo)
 	return &roomInfo, nil
 
 }

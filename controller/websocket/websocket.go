@@ -28,30 +28,32 @@ func OpenWebSocket(c *gin.Context) {
 }
 
 func handleBLiveMessage(room int64, info blive.LiveInfo, msg live.Msg) {
-	if _, ok := msg.(*live.MsgHeartbeatReply); ok { // heartbeat 訊息
-		return
-	}
+
 	bLiveData := BLiveData{
 		Command:  msg.Cmd(),
 		LiveInfo: info,
 		Content:  msg.Raw(),
 	}
-	body := string(msg.Raw())
-	log.Printf("從 %v 收到訊息: %v\n", room, body)
+
+	// if no comment will spam
+	if _, ok := msg.(*live.MsgHeartbeatReply); !ok { // 非 heartbeat 訊息
+		body := string(msg.Raw())
+		log.Printf("從 %v 收到訊息: %v\n", room, body)
+	}
 
 	for _, ip := range subscriber.GetAllSubscribers(room) {
 		if err := writeMessage(ip, bLiveData); err != nil {
 			log.Printf("向 用戶 %v 發送直播數據時出現錯誤: %v\n", ip, err)
 		}
 	}
+
 }
 
 func writeMessage(ip string, data BLiveData) error {
 	con, ok := websocketTable[ip]
 
 	if !ok {
-		log.Println("Trying to send websocket with unknown ip: ", ip)
-		subscriber.Delete(ip)
+		log.Printf("用戶 %v 尚未連接到WS，略過發送。\n", ip)
 		return nil
 	}
 	byteData, err := json.Marshal(data)
@@ -63,6 +65,7 @@ func writeMessage(ip string, data BLiveData) error {
 	if err = con.WriteMessage(websocket.TextMessage, byteData); err != nil {
 		switch err.(type) {
 		case *websocket.CloseError: // if socket closed
+			log.Printf("用戶 %v 已斷開WS連接。\n", ip)
 			delete(websocketTable, ip)
 			subscriber.Delete(ip)
 		default:
