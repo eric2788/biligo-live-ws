@@ -1,17 +1,175 @@
 <!DOCTYPE html>
 <html>
-    <head>
-        <title>測試 WebSocket</title>
-        <script src="https://unpkg.com/react@17/umd/react.development.js" crossorigin></script>  
-        <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js" crossorigin></script>
-        <script src="https://unpkg.com/@material-ui/core@latest/umd/material-ui.development.js"></script>
-        <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
-        <link
-            rel="stylesheet"
-            href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap"
-        />
-    </head>
-    <bdoy>
-        Test
-    </bdoy>
+
+<head>
+    <title>測試 WebSocket</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="initial-scale=1, width=device-width" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" />
+</head>
+
+<body>
+    <div id="app"></div>
+    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+    <script src="https://unpkg.com/react@17/umd/react.development.js" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/@material-ui/core@latest/umd/material-ui.development.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script type="text/javascript">
+        const API_HOST = 'localhost:8080'
+    </script>
+    <script type="text/javascript" src="js/websocket.js"></script>
+    <script type="text/javascript" src="js/subscribe.js"></script>
+    <script type="text/babel">
+
+        const {
+            Container,
+            Box,
+            AppBar,
+            Toolbar,
+            Typography,
+            ThemeProvider,
+            createTheme,
+            Card,
+            CssBaseline,
+            CardContent,
+            CardActions,
+            Button,
+            Grid,
+            TextField,
+            Divider,
+            Dialog,
+            DialogTitle,
+            DialogContent,
+            DialogContentText,
+            DialogActions,
+        } = MaterialUI
+
+        const { useState, useEffect } = React
+
+
+        function ErrorDialog(props) {
+            
+            const [open, setOpen] = useState(false)
+
+            useEffect(() => setOpen(!!props.error), [])
+
+            return (
+                <Dialog
+                    open={open}
+                    onClose={() => setOpen(false)}
+                    aria-labelledby="alert-dialog-title"
+                    aria-describedby="alert-dialog-description"
+                >
+                    <DialogTitle id="alert-dialog-title">
+                        {"错误"}
+                    </DialogTitle>
+                    <DialogContent>
+                        <DialogContentText id="alert-dialog-description">
+                            { props.error }
+                        </DialogContentText>
+                    </DialogContent>
+                    <DialogActions>
+                        <Button onClick={() => setOpen(false)}>确定</Button>
+                    </DialogActions>
+                </Dialog>
+            );
+        }
+
+
+        function TopAppBar(props) {
+            return (
+                <AppBar position="relative">
+                    <Toolbar>
+                        <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+                            {props.name}
+                        </Typography>
+                    </Toolbar>
+                </AppBar>
+            )
+        }
+
+
+        function ContentList() {
+
+            const [list, setList] = useState([])
+
+            return (
+                <Box>
+                    <h3>房间讯息</h3>
+                    <Card sx={{ scrollY: 'auto' }}>
+                        <CardContent style={{ height: '500px', border: 1 }}>
+                            {list.map(txt => `<p>${txt}</p>`)}
+                        </CardContent>
+                        <Divider />
+                        <CardActions style={{ height: '70px' }}>
+                            <Button fullWidth variant="outlined" color="primary">启动监听</Button>
+                        </CardActions>
+                    </Card>
+                </Box>
+            )
+        }
+
+
+        function SubscribeList(props) {
+
+            const list = props.list
+
+            return (
+                <Box>
+                    <h3>订阅列表</h3>
+                    <Card sx={{ scrollY: 'auto' }}>
+                        <CardContent style={{ height: '500px' }}>
+                            {list.map(txt => `<p>${txt}</p>`)}
+                        </CardContent>
+                        <Divider />
+                        <CardActions style={{ height: '70px' }}>
+                            <TextField label="新增订阅 (Enter 新增)" fullWidth id="standard-basic" variant="standard" />
+                        </CardActions>
+                    </Card>
+                </Box>
+            )
+        }
+
+        const theme = createTheme()
+
+        function App() {
+
+            const [list, setList] = useState([])
+            const [error, setError] = useState(undefined)
+
+            getSubscribtions()
+                .then(setList)
+                .catch(err => {
+                    console.warn(`错误: ${err.message || err}`)
+                    setError(err.message || err)
+                    console.error(err)
+                })
+
+            return (
+                <ThemeProvider theme={theme}>
+                    <CssBaseline />
+                    <TopAppBar name="測試"></TopAppBar>
+                    <CssBaseline />
+                    <Box sx={{ mt: 5, align: 'center', mx: 10 }}>
+                        <ErrorDialog error={error} />
+                        <Grid alignItems="center" justifyContent="center" container spacing={2}>
+                            <Grid item lg={3} md={12} sm={12} xs={12}>
+                                <SubscribeList list={list} />
+                            </Grid>
+                            <Grid item lg={9} md={12} sm={12} xs={12}>
+                                <ContentList />
+                            </Grid>
+                        </Grid>
+                    </Box>
+                </ThemeProvider>
+            )
+        }
+
+
+        ReactDOM.render(<App />, document.getElementById("app"))
+    </script>
+</body>
+
 </html>
