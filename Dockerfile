@@ -1,5 +1,7 @@
 FROM golang:latest
 
+ENV GIN_MODE=release
+
 WORKDIR /app
 
 RUN cd /app
