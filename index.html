@@ -44,34 +44,41 @@
             DialogContent,
             DialogContentText,
             DialogActions,
+            SnakeBar,
+            Switch,
+            CircularProgress,
+            List,
+            ListItem,
+            ListItemText,
+            ListItemSecondaryAction
         } = MaterialUI
 
         const { useState, useEffect } = React
 
 
         function ErrorDialog(props) {
-            
-            const [open, setOpen] = useState(false)
 
-            useEffect(() => setOpen(!!props.error), [])
+            if (!props.error) {
+                return null
+            }
 
             return (
                 <Dialog
-                    open={open}
-                    onClose={() => setOpen(false)}
-                    aria-labelledby="alert-dialog-title"
-                    aria-describedby="alert-dialog-description"
+                    open={!!props.error}
+                    onClose={props.onClose}
+                    maxWidth="md"
+                    fullWidth
                 >
-                    <DialogTitle id="alert-dialog-title">
-                        {"错误"}
+                    <DialogTitle sx={{ color: 'red' }}>
+                        <b style={{ color: 'red' }}>{props.error.title}</b>
                     </DialogTitle>
                     <DialogContent>
-                        <DialogContentText id="alert-dialog-description">
-                            { props.error }
+                        <DialogContentText>
+                            {props.error.message}
                         </DialogContentText>
                     </DialogContent>
                     <DialogActions>
-                        <Button onClick={() => setOpen(false)}>确定</Button>
+                        <Button onClick={props.onClose}>确定</Button>
                     </DialogActions>
                 </Dialog>
             );
@@ -79,89 +86,395 @@
 
 
         function TopAppBar(props) {
+
+            const ref = React.createRef()
+
             return (
-                <AppBar position="relative">
-                    <Toolbar>
-                        <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+                <AppBar position="relative" color="secondary">
+                    <Toolbar variant="dense" style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between' }}>
+                        <Typography variant="h6" component="div">
                             {props.name}
                         </Typography>
+                        <Box style={{ float: 'right' }}>
+                            切换深色
+                            <Switch ref={ref} color="primary" onChange={props.onSwitchDark} checked={props.dark} />
+                        </Box>
                     </Toolbar>
                 </AppBar>
             )
         }
 
 
-        function ContentList() {
+        function ContentList(props) {
 
-            const [list, setList] = useState([])
+            const started = props.started
+            const loading = props.loading
+
+            let content = loading ? <LoadingGrid /> : (
+                <List dense>
+                    {
+                        props.list.map((sub, i, arr) => (
+                            <ListItem key={sub} ref={arr.length - 1 == i ? props.hook : null}>
+                                <ListItemText>
+                                    {sub}
+                                </ListItemText>
+                            </ListItem>
+                        ))
+                    }
+                </List>
+            )
+
+            const handleClick = () => {
+                if (started) {
+                    props.onStop()
+                } else {
+                    props.onStart()
+                }
+            }
 
             return (
                 <Box>
-                    <h3>房间讯息</h3>
-                    <Card sx={{ scrollY: 'auto' }}>
-                        <CardContent style={{ height: '500px', border: 1 }}>
-                            {list.map(txt => `<p>${txt}</p>`)}
+                    <Grid container alignItems="center" justifyContent="space-between">
+                        <h3>房间讯息</h3>
+                        <Box style={{ float: 'right' }}>
+                            保持置底
+                            <Switch onChange={props.onSwitchBottom} checked={props.contentBottom} />
+                        </Box>
+                    </Grid>
+                    <Card>
+                        <CardContent style={{ height: '500px', border: 1, overflowY: 'auto', overflowX: 'hidden' }} ref={props.hook}>
+                            {content}
                         </CardContent>
                         <Divider />
                         <CardActions style={{ height: '70px' }}>
-                            <Button fullWidth variant="outlined" color="primary">启动监听</Button>
+                            <Button fullWidth variant="outlined" color="primary" disabled={loading} onClick={handleClick}>
+                                {started ? '中止' : '启动'}监听
+                            </Button>
                         </CardActions>
                     </Card>
                 </Box>
+            )
+        }
+
+
+        function ErrorAlert(props) {
+
+            if (!props.error) return null
+
+            return (
+                <Grid
+                    alignItems="center"
+                    justifyContent="center"
+                    container
+                    style={{
+                        height: '100%',
+                        width: '100%',
+                        padding: 0
+                    }}
+                >
+                    <h4 style={{ color: 'red' }}> {props.error} </h4>
+                </Grid>
+            )
+        }
+
+
+        function LoadingGrid() {
+
+            return (
+                <Grid
+                    alignItems="center"
+                    justifyContent="center"
+                    container
+                    style={{
+                        height: '100%',
+                        width: '100%',
+                        padding: 0
+                    }}
+                >
+                    <CircularProgress />
+                </Grid>
             )
         }
 
 
         function SubscribeList(props) {
 
-            const list = props.list
+            const loading = props.loading
+            const starting = props.starting || false
+
+            const onEnter = (e) => {
+                if (e.charCode !== 13) return
+                if (!e.target.value) return
+                const room = Number.parseInt(e.target.value)
+                if (isNaN(room)) {
+                    alert('请输入有效的数字')
+                    return
+                }
+                e.target.value = ''
+                if (props.list.includes(room)) {
+                    props.onError({
+                        title: '添加失败',
+                        message: `房间 ${room} 已在名单内。`
+                    })
+                    return
+                }
+                props.onAddSub(room)
+            }
+
+            let content;
+
+            if (loading) {
+                content = <LoadingGrid />
+            } else {
+                content = (
+                    <List dense>
+                        {
+                            props.list.map((sub, i, arr) => (
+                                <ListItem key={sub} ref={arr.length - 1 == i ? props.hook : null}>
+                                    <ListItemText>
+                                        {sub}
+                                    </ListItemText>
+                                    <ListItemSecondaryAction>
+                                        <Button color="primary" onClick={() => props.onDelete(sub)} disabled={starting}>删除</Button>
+                                    </ListItemSecondaryAction>
+                                </ListItem>
+                            ))
+                        }
+                    </List>
+                )
+            }
 
             return (
                 <Box>
                     <h3>订阅列表</h3>
                     <Card sx={{ scrollY: 'auto' }}>
-                        <CardContent style={{ height: '500px' }}>
-                            {list.map(txt => `<p>${txt}</p>`)}
+                        <CardContent style={{ height: '500px', overflowY: 'auto', overflowX: 'hidden' }}>
+                            {content}
                         </CardContent>
                         <Divider />
                         <CardActions style={{ height: '70px' }}>
-                            <TextField label="新增订阅 (Enter 新增)" fullWidth id="standard-basic" variant="standard" />
+                            <TextField
+                                type="number"
+                                min="1"
+                                disabled={loading || starting}
+                                label="新增订阅 (Enter 新增)"
+                                fullWidth
+                                variant="standard"
+                                onKeyPress={onEnter}
+                            />
                         </CardActions>
                     </Card>
                 </Box>
             )
         }
 
-        const theme = createTheme()
+
+        class SubscribePanel extends React.Component {
+
+            constructor(props) {
+                super(props)
+                this.state = {
+                    loading: false,
+                    sub: [],
+                    content: [],
+                    started: false,
+                    bottom: true
+                }
+                this.updateState = this.updateState.bind(this)
+                this.startListen = this.startListen.bind(this)
+                this.stopListen = this.stopListen.bind(this)
+                this.handleError = this.handleError.bind(this)
+                this.onAddSubscribe = this.onAddSubscribe.bind(this)
+                this.onDeleteSubscribe = this.onDeleteSubscribe.bind(this)
+                this.onUpdateMessage = this.onUpdateMessage.bind(this)
+                this.onSwitchBottom = this.onSwitchBottom.bind(this)
+
+                this.contentRef = React.createRef()
+                this.subscribeRef = React.createRef()
+                this.buffer = []
+            }
+
+            async updateState(update) {
+                return new Promise((res,) => this.setState(update, res))
+            }
+
+
+            startListen() {
+                this.updateState({
+                    loading: true,
+                    content: []
+                }).then(() => subscribesFake(this.state.sub))
+                    .then(sub => this.updateState({
+                        sub: sub,
+                        started: true
+                    }))
+                    .then(() => fakeConnect(this.onUpdateMessage))
+                    .catch(err => {
+                        const errMessage = err.message || err
+                        console.warn(`错误: ${errMessage}`)
+                        console.warn(err)
+                        props.onError({
+                            title: '递交订阅失败时出现错误',
+                            message: errMessage
+                        })
+                    })
+                    .finally(() => this.updateState({loading: false}))
+            }
+
+            onSwitchBottom(e){
+                this.updateState({bottom: e.target.checked})
+            }
+
+
+            onUpdateMessage(data){
+                this.buffer.push(data)
+                this.updateState((state, props) => ({
+                    content: [...state.content, data]
+                }))
+                .then(() => {
+                    if (this.state.bottom){
+                        this.contentRef.current.scrollIntoView({ behavior: 'smooth' })
+                    }
+                    if (this.buffer.length > this.state.content.length){
+                        console.warn(`数据不一致 -> 原始数量: ${this.buffer.length} ; 元素数量: ${this.state.content.length}`)
+                    }
+                })
+            }
+
+            stopListen() {
+                this.buffer = []
+                this.updateState({
+                    loading: true
+                })
+                .then(() => fakeDisconnect())
+                .finally(() => this.updateState({
+                    started: false,
+                    content: [],
+                    loading: false
+                }))
+            }
+
+            onAddSubscribe(room) {
+                this.updateState((state, props) => ({
+                    sub: [...state.sub, room]
+                }))
+                .then(() => this.subscribeRef.current.scrollIntoView({ behavior: 'smooth' }))
+            }
+
+            onDeleteSubscribe(room) {
+                const newSub = [...this.state.sub]
+                newSub.splice(newSub.indexOf(room), 1)
+                this.updateState({
+                    sub: newSub
+                })
+            }
+
+
+
+            handleError(err) {
+                this.props.onError(err)
+            }
+
+            componentDidMount() {
+                this.updateState({ loading: true })
+                    .then(() => getSubscribtionsFake())
+                    .then(sub => this.updateState({sub: sub}))
+                    .catch(err => {
+                        const errMessage = err.message || err
+                        console.warn(`错误: ${errMessage}`)
+                        console.warn(err)
+                        props.onError({
+                            title: '尝试获取订阅列表时出现错误',
+                            message: errMessage
+                        })
+                    }).finally(() => this.updateState({loading: false}))
+            }
+
+            componentWillUnmount() {
+
+            }
+
+            render() {
+                return (
+                    <Grid alignItems="center" justifyContent="center" container spacing={2}>
+                    <Grid item lg={3} md={12} sm={12} xs={12}>
+                        <SubscribeList
+                            loading={this.state.loading}
+                            onError={this.handleError}
+                            list={this.state.sub}
+                            onAddSub={this.onAddSubscribe}
+                            onDelete={this.onDeleteSubscribe}
+                            starting={this.state.started}
+                            hook={this.subscribeRef}
+                        />
+                    </Grid>
+                    <Grid item lg={9} md={12} sm={12} xs={12}>
+                        <ContentList
+                            onError={this.handleError}
+                            list={this.state.content}
+                            loading={this.state.loading}
+                            onStart={this.startListen}
+                            onStop={this.stopListen}
+                            started={this.state.started}
+                            hook={this.contentRef}
+                            contentBottom={this.state.bottom}
+                            onSwitchBottom={this.onSwitchBottom}
+                        />
+                    </Grid>
+                </Grid>
+                )
+            }
+        }
 
         function App() {
 
-            const [list, setList] = useState([])
-            const [error, setError] = useState(undefined)
+            const lightTheme = createTheme({
+                palette: {
+                    type: 'light',
+                    primary: {
+                        main: '#FF4081'
+                    },
+                    secondary: {
+                        main: '#3949AB'
+                    }
+                }
+            })
 
-            getSubscribtions()
-                .then(setList)
-                .catch(err => {
-                    console.warn(`错误: ${err.message || err}`)
-                    setError(err.message || err)
-                    console.error(err)
-                })
+            const darkTheme = createTheme({
+                palette: {
+                    type: 'dark',
+                    primary: {
+                        main: '#bdbdbd'
+                    },
+                    secondary: {
+                        main: '#424242'
+                    }
+                },
+            });
+
+            const [dark, setDark] = useState(false)
+            const [error, setError] = useState(undefined)
+            const handleError = (err) => setError(err)
+
+            useEffect(() => {
+                const systemDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+                const storageDark = localStorage['dark'] === 'true'
+                setDark(localStorage['dark'] ? storageDark : systemDark)
+            }, [])
+
+            const onSwitchDark = (e) => {
+                setDark(e.target.checked)
+                localStorage['dark'] = e.target.checked
+            }
 
             return (
-                <ThemeProvider theme={theme}>
+                <ThemeProvider theme={dark ? darkTheme : lightTheme}>
                     <CssBaseline />
-                    <TopAppBar name="測試"></TopAppBar>
+                    <TopAppBar name="测试获取B站直播数据" onSwitchDark={onSwitchDark} dark={dark} />
                     <CssBaseline />
                     <Box sx={{ mt: 5, align: 'center', mx: 10 }}>
-                        <ErrorDialog error={error} />
-                        <Grid alignItems="center" justifyContent="center" container spacing={2}>
-                            <Grid item lg={3} md={12} sm={12} xs={12}>
-                                <SubscribeList list={list} />
-                            </Grid>
-                            <Grid item lg={9} md={12} sm={12} xs={12}>
-                                <ContentList />
-                            </Grid>
-                        </Grid>
+                        <ErrorDialog error={error} onClose={() => setError(undefined)} />
+                        <SubscribePanel onError={handleError} />
                     </Box>
                 </ThemeProvider>
             )

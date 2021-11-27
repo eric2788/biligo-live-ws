@@ -34,3 +34,39 @@ async function clearSubscribe(){
     }
     return response.data
 }
+
+// fake service
+
+async function sleep(ms) {
+    return new Promise((res, ) => setTimeout(res, ms))
+}
+
+let subscribeList = [
+    123456789,
+    987654321,
+    123456,
+    45454545,
+    114514,
+    1919810
+]
+
+async function getSubscribtionsFake(){
+    await sleep(3000)
+    return subscribeList
+}
+
+
+const invalids = [ 123456, 114514, 1919810 ]
+
+async function subscribesFake(list){
+    subscribeList = subscribeList.filter(room => !invalids.includes(room))
+    await sleep(2500)
+    return subscribeList
+}
+
+
+async function clearSubscribeFake(){
+    subscribeList = []
+    await sleep(2500)
+    return {}
+}
