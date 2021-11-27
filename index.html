@@ -2,11 +2,12 @@
 <html>
 
 <head>
-    <title>測試 WebSocket</title>
+    <title>测试获取B站直播数据</title>
     <meta charset="utf-8" />
     <meta name="viewport" content="initial-scale=1, width=device-width" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" />
+
 </head>
 
 <body>
@@ -18,9 +19,11 @@
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script type="text/javascript">
         const API_HOST = 'localhost:8080'
+        const SCHEMA = ''
     </script>
     <script type="text/javascript" src="js/websocket.js"></script>
     <script type="text/javascript" src="js/subscribe.js"></script>
+    <script type="text/javascript" src="js/bliveformatter.js"></script>
     <script type="text/babel">
 
         const {
@@ -54,6 +57,29 @@
         } = MaterialUI
 
         const { useState, useEffect } = React
+
+        class ErrorBoundary extends React.Component {
+            constructor(props) {
+                super(props);
+                this.state = { hasError: false };
+            }
+
+            static getDerivedStateFromError(error) {
+                return {
+                    hasError: true
+                };
+            }
+            componentDidCatch(error, errorInfo) {
+                console.warn(error, errorInfo)
+            }
+
+            render() {
+                if (this.state.hasError) {
+                    return <h1>Something went wrong.</h1>;
+                }
+                return this.props.children;
+            }
+        }
 
 
         function ErrorDialog(props) {
@@ -104,25 +130,23 @@
             )
         }
 
+        function ContentRow(props, ref) {
+            const { index, style, data } = props
+
+            return (
+                <ListItem style={style} key={index} ref={data.length - 1 == index ? ref : null}>
+                    <ListItemText>
+                        {data[index]}
+                    </ListItemText>
+                </ListItem>
+            )
+        }
 
         function ContentList(props) {
 
             const started = props.started
             const loading = props.loading
 
-            let content = loading ? <LoadingGrid /> : (
-                <List dense>
-                    {
-                        props.list.map((sub, i, arr) => (
-                            <ListItem key={sub} ref={arr.length - 1 == i ? props.hook : null}>
-                                <ListItemText>
-                                    {sub}
-                                </ListItemText>
-                            </ListItem>
-                        ))
-                    }
-                </List>
-            )
 
             const handleClick = () => {
                 if (started) {
@@ -142,8 +166,21 @@
                         </Box>
                     </Grid>
                     <Card>
-                        <CardContent style={{ height: '500px', border: 1, overflowY: 'auto', overflowX: 'hidden' }} ref={props.hook}>
-                            {content}
+                        <CardContent style={{ height: '500px', overflowWrap: 'break-word', overflowY: 'auto' }}>
+                            <ErrorBoundary>
+                                <List dense>
+                                    {
+                                        props.list.map(data => BLiveDataFomatter({ data })).filter(d => !!d)
+                                            .map((line, i, arr) => (
+                                                <ListItem key={i} ref={arr.length - 1 == i ? props.hook : null}>
+                                                    <ListItemText>
+                                                        {line}
+                                                    </ListItemText>
+                                                </ListItem>
+                                            ))
+                                    }
+                                </List>
+                            </ErrorBoundary>
                         </CardContent>
                         <Divider />
                         <CardActions style={{ height: '70px' }}>
@@ -196,7 +233,6 @@
             )
         }
 
-
         function SubscribeList(props) {
 
             const loading = props.loading
@@ -208,6 +244,10 @@
                 const room = Number.parseInt(e.target.value)
                 if (isNaN(room)) {
                     alert('请输入有效的数字')
+                    return
+                }
+                if (room < 0) {
+                    alert('不能为负数')
                     return
                 }
                 e.target.value = ''
@@ -255,7 +295,7 @@
                         <CardActions style={{ height: '70px' }}>
                             <TextField
                                 type="number"
-                                min="1"
+                                min={1}
                                 disabled={loading || starting}
                                 label="新增订阅 (Enter 新增)"
                                 fullWidth
@@ -291,7 +331,6 @@
 
                 this.contentRef = React.createRef()
                 this.subscribeRef = React.createRef()
-                this.buffer = []
             }
 
             async updateState(update) {
@@ -300,65 +339,75 @@
 
 
             startListen() {
+                if (this.state.started) {
+                    this.props.onError({
+                        title: '尝试打开WebSocket连接时发生错误',
+                        message: '一个连接已经开启，请关闭后再打开'
+                    })
+                    return
+                }
                 this.updateState({
                     loading: true,
                     content: []
-                }).then(() => subscribesFake(this.state.sub))
-                    .then(sub => this.updateState({
-                        sub: sub,
-                        started: true
-                    }))
-                    .then(() => fakeConnect(this.onUpdateMessage))
+                }).then(() => subscribes(this.state.sub))
+                    .then(sub => this.updateState({ sub }))
+                    .then(() => this.updateState({ loading: false, started: true }))
+                    .then(() => connect(this.onUpdateMessage))
                     .catch(err => {
-                        const errMessage = err.message || err
+                        let errMessage;
+                        if (err.response) {
+                            errMessage = err.response.data.error
+                        } else if (err.target) {
+                            errMessage = `WebSocket 连接失败`
+                        } else {
+                            errMessage = err.message || err
+                        }
                         console.warn(`错误: ${errMessage}`)
                         console.warn(err)
-                        props.onError({
-                            title: '递交订阅失败时出现错误',
+                        this.props.onError({
+                            title: '递交订阅或連接WS时出现错误',
                             message: errMessage
                         })
                     })
-                    .finally(() => this.updateState({loading: false}))
+                    .finally(() => this.updateState({ loading: false }))
             }
 
-            onSwitchBottom(e){
-                this.updateState({bottom: e.target.checked})
+            onSwitchBottom(e) {
+                this.updateState({ bottom: e.target.checked })
             }
 
-
-            onUpdateMessage(data){
-                this.buffer.push(data)
-                this.updateState((state, props) => ({
-                    content: [...state.content, data]
-                }))
-                .then(() => {
-                    if (this.state.bottom){
-                        this.contentRef.current.scrollIntoView({ behavior: 'smooth' })
-                    }
-                    if (this.buffer.length > this.state.content.length){
-                        console.warn(`数据不一致 -> 原始数量: ${this.buffer.length} ; 元素数量: ${this.state.content.length}`)
+            onUpdateMessage(data) {
+                this.updateState((state, props) => {
+                    const newContent = [...state.content, data]
+                    //防止过多，限制最大元素 150
+                    newContent.splice(0, newContent.length - 150)
+                    return {
+                        content: newContent
                     }
                 })
+                    .then(() => {
+                        if (this.state.bottom && this.contentRef.current) {
+                            this.contentRef.current.scrollIntoView({ behavior: 'smooth' })
+                        }
+                    })
             }
 
             stopListen() {
-                this.buffer = []
                 this.updateState({
                     loading: true
                 })
-                .then(() => fakeDisconnect())
-                .finally(() => this.updateState({
-                    started: false,
-                    content: [],
-                    loading: false
-                }))
+                    .then(() => disconnect())
+                    .finally(() => this.updateState({
+                        started: false,
+                        loading: false
+                    }))
             }
 
             onAddSubscribe(room) {
                 this.updateState((state, props) => ({
                     sub: [...state.sub, room]
                 }))
-                .then(() => this.subscribeRef.current.scrollIntoView({ behavior: 'smooth' }))
+                    .then(() => this.subscribeRef.current.scrollIntoView({ behavior: 'smooth' }))
             }
 
             onDeleteSubscribe(room) {
@@ -377,51 +426,47 @@
 
             componentDidMount() {
                 this.updateState({ loading: true })
-                    .then(() => getSubscribtionsFake())
-                    .then(sub => this.updateState({sub: sub}))
+                    .then(() => getSubscribtions())
+                    .then(sub => this.updateState({ sub: sub }))
                     .catch(err => {
                         const errMessage = err.message || err
                         console.warn(`错误: ${errMessage}`)
                         console.warn(err)
-                        props.onError({
+                        this.props.onError({
                             title: '尝试获取订阅列表时出现错误',
                             message: errMessage
                         })
-                    }).finally(() => this.updateState({loading: false}))
-            }
-
-            componentWillUnmount() {
-
+                    }).finally(() => this.updateState({ loading: false }))
             }
 
             render() {
                 return (
                     <Grid alignItems="center" justifyContent="center" container spacing={2}>
-                    <Grid item lg={3} md={12} sm={12} xs={12}>
-                        <SubscribeList
-                            loading={this.state.loading}
-                            onError={this.handleError}
-                            list={this.state.sub}
-                            onAddSub={this.onAddSubscribe}
-                            onDelete={this.onDeleteSubscribe}
-                            starting={this.state.started}
-                            hook={this.subscribeRef}
-                        />
+                        <Grid item lg={3} md={12} sm={12} xs={12}>
+                            <SubscribeList
+                                loading={this.state.loading}
+                                onError={this.handleError}
+                                list={this.state.sub}
+                                onAddSub={this.onAddSubscribe}
+                                onDelete={this.onDeleteSubscribe}
+                                starting={this.state.started}
+                                hook={this.subscribeRef}
+                            />
+                        </Grid>
+                        <Grid item lg={9} md={12} sm={12} xs={12}>
+                            <ContentList
+                                onError={this.handleError}
+                                list={this.state.content}
+                                loading={this.state.loading}
+                                onStart={this.startListen}
+                                onStop={this.stopListen}
+                                started={this.state.started}
+                                hook={this.contentRef}
+                                contentBottom={this.state.bottom}
+                                onSwitchBottom={this.onSwitchBottom}
+                            />
+                        </Grid>
                     </Grid>
-                    <Grid item lg={9} md={12} sm={12} xs={12}>
-                        <ContentList
-                            onError={this.handleError}
-                            list={this.state.content}
-                            loading={this.state.loading}
-                            onStart={this.startListen}
-                            onStop={this.stopListen}
-                            started={this.state.started}
-                            hook={this.contentRef}
-                            contentBottom={this.state.bottom}
-                            onSwitchBottom={this.onSwitchBottom}
-                        />
-                    </Grid>
-                </Grid>
                 )
             }
         }
@@ -470,7 +515,7 @@
             return (
                 <ThemeProvider theme={dark ? darkTheme : lightTheme}>
                     <CssBaseline />
-                    <TopAppBar name="测试获取B站直播数据" onSwitchDark={onSwitchDark} dark={dark} />
+                    <TopAppBar name={document.title} onSwitchDark={onSwitchDark} dark={dark} />
                     <CssBaseline />
                     <Box sx={{ mt: 5, align: 'center', mx: 10 }}>
                         <ErrorDialog error={error} onClose={() => setError(undefined)} />

@@ -1,15 +1,27 @@
-const SUBSCRIBE_URL = `http://${API_HOST}/subscribe`
+const SUBSCRIBE_URL = `http${SCHEMA}://${API_HOST}/subscribe`
+
+const VALIDATE_URL = `http${SCHEMA}://${API_HOST}/validate`
+
+async function validate(){
+    const res = await axios.post(VALIDATE_URL)
+    if (res.status !== 200){
+        throw new Error(res.statusText)
+    }
+}
 
 
 const api = axios.create({
     baseURL: SUBSCRIBE_URL,
     timeout: 5000,
     headers: {
-        'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
+        'Content-Type': 'application/x-www-form-urlencoded'
     }
 })
 
-async function getSubscribtions(){
+
+// == real
+
+async function getSubscribtionsReal(){
     const response = await api.get('')
     if (response.status !== 200){
         throw new Error(response.statusText)
@@ -18,8 +30,12 @@ async function getSubscribtions(){
 }
 
 
-async function subscribes(list){
-    const response = await api.post('', { subscribes: list })
+async function subscribesReal(list){
+    const form = new FormData()
+    for (const room of list){
+        form.append('subscribes', room)
+    }
+    const response = await api.post('', form)
     if (response.status !== 200){
         throw new Error(response.statusText)
     }
@@ -27,7 +43,7 @@ async function subscribes(list){
 }
 
 
-async function clearSubscribe(){
+async function clearSubscribeReal(){
     const response = await api.delete('')
     if (response.status !== 200){
         throw new Error(response.statusText)
@@ -59,7 +75,7 @@ async function getSubscribtionsFake(){
 const invalids = [ 123456, 114514, 1919810 ]
 
 async function subscribesFake(list){
-    subscribeList = subscribeList.filter(room => !invalids.includes(room))
+    subscribeList = list.filter(room => !invalids.includes(room))
     await sleep(2500)
     return subscribeList
 }
@@ -69,4 +85,21 @@ async function clearSubscribeFake(){
     subscribeList = []
     await sleep(2500)
     return {}
+}
+
+
+// combine
+
+async function getSubscribtions(){
+    return getSubscribtionsReal()
+}
+
+
+async function subscribes(list){
+    return subscribesReal(list)
+}
+
+
+async function clearSubscribe(){
+    return clearSubscribeReal()
 }
