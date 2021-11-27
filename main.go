@@ -11,9 +11,10 @@ func main() {
 
 	router := gin.Default()
 
+	router.Use(CORS())
 	router.Use(ErrorHandler)
 
-	router.Any("", Index)
+	router.GET("", Index)
 
 	subscribe.Register(router.Group("subscribe"))
 	ws.Register(router.Group("ws"))

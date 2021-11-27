@@ -20,6 +20,12 @@ func Register(gp *gin.RouterGroup) {
 }
 
 func OpenWebSocket(c *gin.Context) {
+	if _, ok := subscriber.Get(c.ClientIP()); !ok {
+		c.AbortWithStatusJSON(400, gin.H{
+			"error": "尚未訂閱任何的直播房間號",
+		})
+		return
+	}
 	upgrader := websocket.Upgrader{}
 	ws, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
