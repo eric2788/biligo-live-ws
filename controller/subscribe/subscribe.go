@@ -30,7 +30,15 @@ func DeleteSubscribe(c *gin.Context) {
 }
 
 func Subscribe(c *gin.Context) {
-	subArr := c.PostFormArray("subscribes")
+	subArr, ok := c.GetPostFormArray("subscribes")
+	if !ok {
+		c.AbortWithStatusJSON(400, gin.H{"error": "缺少 `subscribes` 數值(訂閱列表)"})
+		return
+	}
+	if len(subArr) == 0 {
+		c.AbortWithStatusJSON(400, gin.H{"error": "訂閱列表不能為空"})
+		return
+	}
 	log.Printf("%v is going to subscribe %v", c.ClientIP(), strings.Join(subArr, ", "))
 	rooms := make([]int64, 0)
 	for _, arr := range subArr {
@@ -50,8 +58,13 @@ func Subscribe(c *gin.Context) {
 		}
 
 	}
+
+	// 如果之前尚未有過訂閱 (即新增而不是更新)
+	if _, subBefore := subscriber.Get(c.ClientIP()); !subBefore {
+		// 設置如果五分鐘後尚未連線 WebSocket 就清除訂閱記憶
+		subscriber.ExpireAfter(c.ClientIP(), time.After(time.Minute*5))
+	}
+
 	subscriber.Update(c.ClientIP(), rooms)
-	// 設置如果五分鐘後尚未連線 WebSocket 就清除訂閱記憶
-	subscriber.ExpireAfter(c.ClientIP(), time.After(time.Minute*5))
 	c.IndentedJSON(200, rooms)
 }

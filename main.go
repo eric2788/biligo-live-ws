@@ -15,6 +15,7 @@ func main() {
 	router.Use(ErrorHandler)
 
 	router.GET("", Index)
+	router.POST("validate", ValidateProcess)
 
 	subscribe.Register(router.Group("subscribe"))
 	ws.Register(router.Group("ws"))

@@ -7,7 +7,7 @@ import (
 
 func CORS() gin.HandlerFunc {
 	return cors.New(cors.Config{
-		AllowAllOrigins:  true,
-		AllowCredentials: false,
+		AllowAllOrigins: true,
+		AllowWebSockets: true,
 	})
 }
