@@ -92,6 +92,63 @@ func GetAllSubscribers(room int64) []string {
 	return ips
 }
 
+func Add(ip string, rooms []int64) []int64 {
+
+	res, ok := Get(ip)
+
+	if !ok {
+		res = make([]int64, 0)
+	}
+
+	newRooms := UpdateRange(res, rooms, func(s set.Set, i int64) {
+		s.Add(i)
+	})
+
+	Update(ip, newRooms)
+	return newRooms
+}
+
+func UpdateRange(res []int64, rooms []int64, updater func(set.Set, int64)) []int64 {
+
+	roomSet := ToSet(res)
+
+	for _, room := range rooms {
+		updater(roomSet, room)
+	}
+
+	roomArr := roomSet.ToSlice()
+	newRooms := make([]int64, len(roomArr))
+	for i, room := range roomArr {
+		newRooms[i] = room.(int64)
+	}
+
+	return newRooms
+}
+
+func Remove(ip string, rooms []int64) ([]int64, bool) {
+
+	res, ok := Get(ip)
+
+	if !ok {
+		return nil, false
+	}
+
+	newRooms := UpdateRange(res, rooms, func(s set.Set, i int64) {
+		s.Remove(i)
+	})
+
+	Update(ip, newRooms)
+	return newRooms, true
+}
+
 func Delete(ip string) {
 	subscribeMap.Delete(ip)
+}
+
+func ToSet(arr []int64) set.Set {
+	s := set.NewSet()
+	for _, k := range arr {
+		s.Add(k)
+	}
+	return s
 }
