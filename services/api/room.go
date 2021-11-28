@@ -49,11 +49,19 @@ func GetRoomInfo(room int64) (*RoomInfo, error) {
 
 }
 
-func RoomExist(room int64) (bool, error) {
+func GetRealRoom(room int64) (int64, error) {
 	res, err := GetRoomInfo(room)
 
+	// 错误
 	if err != nil {
-		return false, err
+		return -1, err
 	}
-	return res.Code == 0, nil
+
+	// 房间不存在
+	if res.Data == nil {
+		return -1, nil
+	}
+
+	return res.Data.RoomId, nil // 返回真实房间号
+
 }

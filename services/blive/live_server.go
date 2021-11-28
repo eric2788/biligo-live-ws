@@ -16,40 +16,10 @@ var excepted = set.NewSet()
 
 func LaunchLiveServer(room int64, handle func(data LiveInfo, msg biligo.Msg)) (context.CancelFunc, error) {
 
-	info, err := api.GetRoomInfo(room)
+	liveInfo, err := GetLiveInfo(room) // 獲取直播資訊
 
 	if err != nil {
-		log.Println("索取房間資訊時出現錯誤: ", err)
 		return nil, err
-	}
-
-	if info.Data == nil {
-		log.Println("索取房間資訊時出現錯誤: ", info.Message)
-		return nil, errors.New(info.Message)
-	}
-
-	data := info.Data
-	realId := data.RoomId // 真正的房間號
-
-	user, err := api.GetUserInfo(data.Uid)
-
-	if err != nil {
-		log.Println("索取用戶資訊時出現錯誤: ", err)
-		return nil, err
-	}
-
-	if user.Data == nil {
-		log.Println("索取用戶資訊時出現錯誤: ", err)
-		return nil, errors.New(info.Message)
-	}
-
-	liveInfo := LiveInfo{
-		RoomId:   room,
-		UID:      data.Uid,
-		Title:    data.Title,
-		Name:     user.Data.Name,
-		Cover:    data.UserCover,
-		RealRoom: realId,
 	}
 
 	live := biligo.NewLive(true, 30*time.Second, 0, func(err error) {
@@ -64,9 +34,8 @@ func LaunchLiveServer(room int64, handle func(data LiveInfo, msg biligo.Msg)) (c
 	ctx, stop := context.WithCancel(context.Background())
 
 	go func() {
-		if err := live.Enter(ctx, realId, "", 0); err != nil {
-			log.Println("啟動監聽時出現錯誤: ", err)
-			excepted.Add(room)
+		if err := live.Enter(ctx, room, "", 0); err != nil {
+			log.Printf("監聽房間 %v 時出現錯誤: %v\n", room, err)
 			listening.Remove(room)
 		}
 	}()
@@ -79,7 +48,16 @@ func LaunchLiveServer(room int64, handle func(data LiveInfo, msg biligo.Msg)) (c
 					log.Println(tp.Error)
 					continue
 				}
-				handle(liveInfo, tp.Msg)
+				// 開播 !?
+				if _, ok := tp.Msg.(*biligo.MsgLive); ok {
+					log.Printf("房間 %v 開播，正在更新直播資訊...\n", room)
+					// 更新一次直播资讯
+					if latestInfo, err := GetLiveInfo(room); err == nil {
+						// 更新成功， 更新
+						liveInfo = latestInfo
+					}
+				}
+				handle(*liveInfo, tp.Msg)
 			case <-ctx.Done():
 				log.Printf("房間 %v 監聽中止。\n", room)
 				listening.Remove(room)
@@ -93,10 +71,49 @@ func LaunchLiveServer(room int64, handle func(data LiveInfo, msg biligo.Msg)) (c
 }
 
 type LiveInfo struct {
-	RoomId   int64  `json:"room_id"`
-	UID      int64  `json:"uid"`
-	Title    string `json:"title"`
-	Name     string `json:"name"`
-	Cover    string `json:"cover"`
-	RealRoom int64  `json:"real_room"`
+	RoomId int64  `json:"room_id"`
+	UID    int64  `json:"uid"`
+	Title  string `json:"title"`
+	Name   string `json:"name"`
+	Cover  string `json:"cover"`
+}
+
+func GetLiveInfo(room int64) (*LiveInfo, error) {
+
+	info, err := api.GetRoomInfo(room)
+
+	if err != nil {
+		log.Println("索取房間資訊時出現錯誤: ", err)
+		return nil, err
+	}
+
+	if info.Data == nil {
+		log.Println("索取房間資訊時出現錯誤: ", info.Message)
+		excepted.Add(room)
+		return nil, errors.New(info.Message)
+	}
+
+	data := info.Data
+	user, err := api.GetUserInfo(data.Uid)
+
+	if err != nil {
+		log.Println("索取用戶資訊時出現錯誤: ", err)
+		return nil, err
+	}
+
+	if user.Data == nil {
+		log.Println("索取用戶資訊時出現錯誤: ", err)
+		return nil, errors.New(info.Message)
+	}
+
+	liveInfo := &LiveInfo{
+		RoomId: room,
+		UID:    data.Uid,
+		Title:  data.Title,
+		Name:   user.Data.Name,
+		Cover:  data.UserCover,
+	}
+
+	return liveInfo, nil
+
 }

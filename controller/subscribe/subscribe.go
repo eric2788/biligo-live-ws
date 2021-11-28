@@ -1,6 +1,7 @@
 package subscribe
 
 import (
+	mapset "github.com/deckarep/golang-set"
 	"github.com/eric2788/biligo-live-ws/services/api"
 	"github.com/eric2788/biligo-live-ws/services/subscriber"
 	"github.com/gin-gonic/gin"
@@ -40,7 +41,7 @@ func Subscribe(c *gin.Context) {
 		return
 	}
 	log.Printf("%v is going to subscribe %v", c.ClientIP(), strings.Join(subArr, ", "))
-	rooms := make([]int64, 0)
+	roomSet := mapset.NewSet()
 	for _, arr := range subArr {
 
 		roomId, err := strconv.ParseInt(arr, 10, 64)
@@ -50,8 +51,8 @@ func Subscribe(c *gin.Context) {
 			continue
 		}
 
-		if exist, roomErr := api.RoomExist(roomId); exist {
-			rooms = append(rooms, roomId)
+		if realRoom, roomErr := api.GetRealRoom(roomId); realRoom > 0 {
+			roomSet.Add(realRoom)
 		} else if roomErr != nil {
 			_ = c.Error(roomErr)
 			return
@@ -63,6 +64,14 @@ func Subscribe(c *gin.Context) {
 	if _, subBefore := subscriber.Get(c.ClientIP()); !subBefore {
 		// 設置如果五分鐘後尚未連線 WebSocket 就清除訂閱記憶
 		subscriber.ExpireAfter(c.ClientIP(), time.After(time.Minute*5))
+	}
+
+	// 有生之年我居然還要用 loop 轉泛型 array 同 type array, 醉了
+	roomArr := roomSet.ToSlice()
+	rooms := make([]int64, len(roomArr))
+
+	for i, v := range roomArr {
+		rooms[i] = v.(int64)
 	}
 
 	subscriber.Update(c.ClientIP(), rooms)
