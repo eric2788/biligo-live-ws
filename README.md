@@ -86,7 +86,7 @@
 | ---- | --- | ---- |
 | command | 直播数据指令 | string |
 | live_info | 直播房间资讯 | 详见下放 |
-| content | 直播数据原始内容(已转换为 json string) | byte[] |
+| content | 直播数据原始内容(已转换为 json) | string |
 
 直播房间资讯
 
@@ -102,14 +102,17 @@
 
 ### 备注
 
-指令为 `HEARTBEAT_REPLY` 的**直播数据原始内容**已被序列化为格式
+- 指令为 `HEARTBEAT_REPLY` 的**直播数据原始内容**已被序列化为格式
 
-```json
-{
-   "popularity": 999999
-}
-```
-(999999为人气值)
+   ```json
+   {
+      "popularity": 999999
+   }
+   ```
+   (999999为人气值)
+
+
+- 直播数据原始内容(content) 在 json 反序列化后的数值类型为 string, 你需要再一次反序列化以转换为 object
 
 
 ## 私人部署

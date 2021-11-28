@@ -38,11 +38,10 @@ func OpenWebSocket(c *gin.Context) {
 		_ = c.Error(err)
 		return
 	}
+	// 客戶端正常關閉連接
 	ws.SetCloseHandler(func(code int, text string) error {
 		log.Printf("已關閉對 %v 的 Websocket 連接: (%v) %v", c.ClientIP(), code, text)
-		websocketTable.Delete(c.ClientIP())
-		// 等待五分鐘，如果五分鐘後沒有重連則刪除訂閱記憶
-		subscriber.ExpireAfter(c.ClientIP(), time.After(time.Minute*5))
+		HandleClose(c.ClientIP())
 		return ws.WriteMessage(websocket.CloseMessage, nil)
 	})
 
@@ -77,7 +76,7 @@ func handleBLiveMessage(room int64, info blive.LiveInfo, msg live.Msg) {
 	bLiveData := BLiveData{
 		Command:  msg.Cmd(),
 		LiveInfo: info,
-		Content:  raw,
+		Content:  string(raw),
 	}
 
 	// if no comment will spam
@@ -114,14 +113,25 @@ func writeMessage(ip string, data BLiveData) error {
 	}
 
 	if err = con.WriteMessage(websocket.TextMessage, byteData); err != nil {
-		return err
+		log.Printf("向 用戶 %v 發送直播數據時出現錯誤: (%T)%v\n", ip, err, err)
+		log.Printf("關閉對用戶 %v 的連線。", ip)
+		_ = con.Close()
+		// 客戶端非正常關閉連接
+		HandleClose(ip)
+		return nil
 	}
 
 	return nil
 }
 
+func HandleClose(ip string) {
+	websocketTable.Delete(ip)
+	// 等待五分鐘，如果五分鐘後沒有重連則刪除訂閱記憶
+	subscriber.ExpireAfter(ip, time.After(time.Minute*5))
+}
+
 type BLiveData struct {
 	Command  string         `json:"command"`
 	LiveInfo blive.LiveInfo `json:"live_info"`
-	Content  []byte         `json:"content"`
+	Content  string         `json:"content"`
 }
