@@ -8,7 +8,7 @@ env:
 
 on:
   push:
-    branches: [ patch-build-action ]
+    branches: [ github-action-patch ]
 jobs:
 
   build_linux:
