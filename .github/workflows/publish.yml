@@ -30,7 +30,7 @@ jobs:
         name: ${{ env.artifact_name }}
         path: 'dist'
   build_windows:
-    runs-on: window-latest
+    runs-on: windows-latest
     steps:
     - uses: actions/checkout@v2
 
