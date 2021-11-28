@@ -117,6 +117,16 @@
 
 ### Linux / Windows
 
-下载 go 运行环境
-源码下载后执行 go build
+详见 [Releases](https://github.com/eric2788/biligo-live-ws/releases)
 
+运行参数(非必要)
+
+```bash
+./biligo-live-ws 端口
+```
+
+端口: 不填则 8080
+
+## 鸣谢
+
+[bili-go](https://github.com/iyear/biligo-live) 作者

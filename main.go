@@ -1,10 +1,12 @@
 package main
 
 import (
+	"fmt"
 	"github.com/eric2788/biligo-live-ws/controller/subscribe"
 	ws "github.com/eric2788/biligo-live-ws/controller/websocket"
 	"github.com/gin-gonic/gin"
 	"log"
+	"os"
 )
 
 func main() {
@@ -20,7 +22,13 @@ func main() {
 	subscribe.Register(router.Group("subscribe"))
 	ws.Register(router.Group("ws"))
 
-	if err := router.Run(); err != nil {
+	port := ":8080"
+
+	if len(os.Args) > 1 {
+		port = fmt.Sprintf(":%v", os.Args[1])
+	}
+
+	if err := router.Run(port); err != nil {
 		log.Fatal(err)
 	}
 
