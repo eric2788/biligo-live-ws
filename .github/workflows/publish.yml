@@ -8,7 +8,8 @@ env:
 
 on:
   push:
-    branches: [ github-action-patch ]
+    branches: [ master ]
+    
 jobs:
 
   build_linux:
@@ -78,7 +79,7 @@ jobs:
         release_name: Release ${{ github.repository }}-${{ env.version }}
         body: |
           .zip 內有 window 和 linux 的點擊運行程序
-          如欲無需 go 环境，可以下載 zip 直接打開程序運行
+          如欲無需 go 環境，可以下載 zip 直接打開程序運行
         draft: false
         prerelease: false
 
