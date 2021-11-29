@@ -2,7 +2,9 @@ package blive
 
 import (
 	mapset "github.com/deckarep/golang-set"
+	"log"
 	"testing"
+	"time"
 )
 
 var a = mapset.NewSet(3, 4, 5, 6)
@@ -26,4 +28,21 @@ func TestSet(t *testing.T) {
 	for i, k := range mapset.NewSet(&arr).ToSlice() {
 		t.Logf("%v: %v", i, k)
 	}
+}
+
+func TestPanic(t *testing.T) {
+	t.Logf("wait 15 seconds")
+	c := time.After(time.Second * 15)
+	go Rev()
+	<-c
+	defer func() {
+		err := recover()
+		t.Logf("recovered: %v", err)
+	}()
+}
+
+func Rev() {
+	log.Printf("panic after 5 seconds")
+	<-time.After(time.Second * 5)
+	panic("test!")
 }

@@ -34,10 +34,13 @@ func LaunchLiveServer(room int64, handle func(data LiveInfo, msg biligo.Msg)) (c
 	ctx, stop := context.WithCancel(context.Background())
 
 	go func() {
+
 		if err := live.Enter(ctx, room, "", 0); err != nil {
 			log.Printf("監聽房間 %v 時出現錯誤: %v\n", room, err)
 			listening.Remove(room)
+			stop()
 		}
+
 	}()
 
 	go func() {

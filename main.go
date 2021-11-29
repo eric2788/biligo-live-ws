@@ -11,6 +11,8 @@ import (
 
 func main() {
 
+	log.Printf("biligo-live-ws version %v", "0.1.2")
+
 	router := gin.Default()
 
 	router.Use(CORS())
