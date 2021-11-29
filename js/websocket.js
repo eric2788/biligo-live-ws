@@ -11,7 +11,7 @@ async function connectReal(callback){
     await validate() // validate before open websocket
     return new Promise((res, rej) => {
         ws = new WebSocket(WEBSOCKET_URL)
-        ws.onopen = res
+        //ws.onopen = res
         ws.onmessage = function (e) {
             try {
                 callback(JSON.parse(e.data))
@@ -24,6 +24,7 @@ async function connectReal(callback){
             console.warn(e)
             rej(e)
         }
+        ws.onclose = res
     })
 
 }
@@ -31,7 +32,6 @@ async function connectReal(callback){
 async function disconnectReal(){
     if (!ws) return
     await ws.close()
-    return new Promise((res, ) => ws.onclose = res)
 }
 
 

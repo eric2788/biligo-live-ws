@@ -370,7 +370,10 @@
                             message: errMessage
                         })
                     })
-                    .finally(() => this.updateState({ loading: false }))
+                    .finally(() => {
+                        console.log('Websocket completed')
+                        this.updateState({ started: false, loading: false })
+                    })
             }
 
             onSwitchBottom(e) {
@@ -398,10 +401,9 @@
                     loading: true
                 })
                     .then(() => disconnect())
-                    .finally(() => this.updateState({
-                        started: false,
-                        loading: false
-                    }))
+                    .finally(() => {
+                        console.log('WebSocket closed')
+                    })
             }
 
             onAddSubscribe(room) {
