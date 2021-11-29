@@ -9,5 +9,9 @@ func CORS() gin.HandlerFunc {
 	return cors.New(cors.Config{
 		AllowAllOrigins: true,
 		AllowWebSockets: true,
+		AllowHeaders: []string{
+			"X-BLive-Identifier",
+			"Content-Type",
+		},
 	})
 }

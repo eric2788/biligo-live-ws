@@ -28,8 +28,6 @@ func main() {
 		port = fmt.Sprintf(":%v", os.Args[1])
 	}
 
-	gin.SetMode(gin.DebugMode)
-
 	if err := router.Run(port); err != nil {
 		log.Fatal(err)
 	}

@@ -10,6 +10,8 @@ import (
 	"time"
 )
 
+var Id = subscriber.ToClientId
+
 func Register(gp *gin.RouterGroup) {
 	gp.GET("", GetSubscriptions)
 	gp.POST("", Subscribe)
@@ -19,7 +21,7 @@ func Register(gp *gin.RouterGroup) {
 }
 
 func GetSubscriptions(c *gin.Context) {
-	list, ok := subscriber.Get(c.ClientIP())
+	list, ok := subscriber.Get(Id(c))
 	if !ok {
 		list = []int64{}
 	}
@@ -27,34 +29,35 @@ func GetSubscriptions(c *gin.Context) {
 }
 
 func ClearSubscribe(c *gin.Context) {
-	subscriber.Delete(c.ClientIP())
+	subscriber.Delete(Id(c))
 	c.Status(200)
 }
 
 func AddSubscribe(c *gin.Context) {
-
 	rooms, ok := GetSubscribesArr(c)
-
-	log.Printf("用戶 %v 新增訂閱 %v \n", c.ClientIP(), rooms)
 
 	if !ok {
 		return
 	}
 
-	newRooms := subscriber.Add(c.ClientIP(), rooms)
+	log.Printf("用戶 %v 新增訂閱 %v \n", Id(c), rooms)
+
+	ActivateExpire(Id(c))
+
+	newRooms := subscriber.Add(Id(c), rooms)
 	c.IndentedJSON(200, newRooms)
 }
 
 func RemoveSubscribe(c *gin.Context) {
 	rooms, ok := GetSubscribesArr(c)
 
-	log.Printf("用戶 %v 移除訂閱 %v \n", c.ClientIP(), rooms)
-
 	if !ok {
 		return
 	}
 
-	newRooms, ok := subscriber.Remove(c.ClientIP(), rooms)
+	log.Printf("用戶 %v 移除訂閱 %v \n", Id(c), rooms)
+
+	newRooms, ok := subscriber.Remove(Id(c), rooms)
 
 	if !ok {
 		c.IndentedJSON(400, gin.H{"error": "刪除失敗，你尚未遞交過任何訂閱"})
@@ -68,19 +71,15 @@ func Subscribe(c *gin.Context) {
 
 	rooms, ok := GetSubscribesArr(c)
 
-	log.Printf("用戶 %v 設置訂閱 %v \n", c.ClientIP(), rooms)
-
 	if !ok {
 		return
 	}
 
-	// 如果之前尚未有過訂閱 (即新增而不是更新)
-	if _, subBefore := subscriber.Get(c.ClientIP()); !subBefore {
-		// 設置如果五分鐘後尚未連線 WebSocket 就清除訂閱記憶
-		subscriber.ExpireAfter(c.ClientIP(), time.After(time.Minute*5))
-	}
+	log.Printf("用戶 %v 設置訂閱 %v \n", Id(c), rooms)
 
-	subscriber.Update(c.ClientIP(), rooms)
+	ActivateExpire(Id(c))
+
+	subscriber.Update(Id(c), rooms)
 	c.IndentedJSON(200, rooms)
 }
 
@@ -130,4 +129,12 @@ func GetSubscribesArr(c *gin.Context) ([]int64, bool) {
 	}
 
 	return rooms, true
+}
+
+func ActivateExpire(identifier string) {
+	// 如果之前尚未有過訂閱 (即新增而不是更新)
+	if _, subBefore := subscriber.Get(identifier); !subBefore {
+		// 設置如果五分鐘後尚未連線 WebSocket 就清除訂閱記憶
+		subscriber.ExpireAfter(identifier, time.After(time.Minute*5))
+	}
 }
