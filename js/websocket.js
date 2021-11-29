@@ -1,5 +1,5 @@
 
-const WEBSOCKET_URL = `ws${SCHEMA}://${API_HOST}/ws`
+const WEBSOCKET_URL = `ws${SCHEMA}://${API_HOST}/ws?id=${IDENTIFIER}`
 
 console.log(`websocket url is: ${WEBSOCKET_URL}`)
 

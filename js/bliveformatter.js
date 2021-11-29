@@ -1,29 +1,25 @@
-function decodeBase64(str) {
-    return decodeURIComponent(atob(str).split('').map(function (c) {
-        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-    }).join(''));
-}
-
-
 function BLiveDataFomatter(props) {
 
     const msg = props.data
     const { name: liveName } = msg.live_info
 
-    if (msg.command === 'HEARTBEAT_REPLY') {
-        const data = JSON.parse(decodeBase64(msg.content))
-        return `[${liveName}直播间] 房间人气值: ${data.popularity}`
+
+    let content = msg.content //照計應該是 object
+    
+    if (typeof content === 'string'){ // 但如果因為錯誤變成了 string
+        try {
+            content = JSON.parse(msg.content)
+        } catch (err) {
+            console.warn(`轉換 json 時出現錯誤: ${err.message}`)
+            console.warn(err)
+            console.warn(msg.content)
+            return
+        }
     }
 
-    let content;
-    try {
-        content = JSON.parse(decodeBase64(msg.content))
-    } catch (err) {
-        console.warn(`轉換 json 時出現錯誤: ${err.message}`)
-        console.warn(err)
-        console.warn(msg.content)
-        return
-    }
+    if (msg.command === 'HEARTBEAT_REPLY'){
+        return `[${liveName}直播间] 房间人气值: ${content.popularity}`
+    }   
 
     if (content.cmd === 'DANMU_MSG') {
         const [, danmaku, [uid, uname]] = content.info

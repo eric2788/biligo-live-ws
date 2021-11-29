@@ -1,22 +1,20 @@
 const SUBSCRIBE_URL = `http${SCHEMA}://${API_HOST}/subscribe`
-
 const VALIDATE_URL = `http${SCHEMA}://${API_HOST}/validate`
 
+
+const validater = createAxios(VALIDATE_URL)
+
+const api = createAxios(SUBSCRIBE_URL)
+
+
 async function validate(){
-    const res = await axios.post(VALIDATE_URL)
+    const res = await validater.post(VALIDATE_URL)
     if (res.status !== 200){
         throw new Error(res.statusText)
     }
 }
 
 
-const api = axios.create({
-    baseURL: SUBSCRIBE_URL,
-    timeout: 5000,
-    headers: {
-        'Content-Type': 'application/x-www-form-urlencoded'
-    }
-})
 
 
 // == real
@@ -102,4 +100,19 @@ async function subscribes(list){
 
 async function clearSubscribe(){
     return clearSubscribeReal()
+}
+
+
+
+// utils
+
+function createAxios(url){
+    return axios.create({
+        baseURL: url,
+        timeout: 5000,
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Authorization': IDENTIFIER
+        }
+    })
 }

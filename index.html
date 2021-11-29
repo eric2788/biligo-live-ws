@@ -20,6 +20,7 @@
     <script type="text/javascript">
         const API_HOST = 'blive.chu77.xyz'
         const SCHEMA = 's'
+        const IDENTIFIER = 'eric2788.github.io'
     </script>
     <script type="text/javascript" src="js/websocket.js"></script>
     <script type="text/javascript" src="js/subscribe.js"></script>
@@ -499,25 +500,38 @@
 
             const [dark, setDark] = useState(false)
             const [error, setError] = useState(undefined)
+            const [isMobile, setIsMobile] = useState(false)
             const handleError = (err) => setError(err)
 
             useEffect(() => {
                 const systemDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
                 const storageDark = localStorage['dark'] === 'true'
                 setDark(localStorage['dark'] ? storageDark : systemDark)
+                resize()
+                window.addEventListener("resize", resize);
             }, [])
+
+            let lastIsMobile = isMobile
+
+            const resize = () => {
+                const mobile = window.innerWidth <= 760
+                if (mobile !== lastIsMobile){
+                    setIsMobile(mobile)
+                    lastIsMobile = mobile
+                }
+            }
 
             const onSwitchDark = (e) => {
                 setDark(e.target.checked)
                 localStorage['dark'] = e.target.checked
             }
-
+            
             return (
                 <ThemeProvider theme={dark ? darkTheme : lightTheme}>
                     <CssBaseline />
                     <TopAppBar name={document.title} onSwitchDark={onSwitchDark} dark={dark} />
                     <CssBaseline />
-                    <Box sx={{ mt: 5, align: 'center', mx: 10 }}>
+                    <Box sx={{ mt: 5, align: 'center', mx: isMobile ? 3 : 10 }}>
                         <ErrorDialog error={error} onClose={() => setError(undefined)} />
                         <SubscribePanel onError={handleError} />
                     </Box>
