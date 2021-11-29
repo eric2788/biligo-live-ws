@@ -42,18 +42,18 @@
 | Header      | Value |
 | ----------- | ----------- |
 | Content-Type      | application/x-www-form-urlencoded       |
-| X-BLive-Identifier | 非必填，辨识ID，一个IP多程序用的时候防止混淆；不填则用 `anonymous` |
+| Authorization | 非必填，辨识ID，一个IP多程序用的时候防止混淆；不填则用 `anonymous` |
 
 #### 注意
 
-如果标明了 `X-BLive-Identifier`，则连入 websocket 时需要传入 query string `?id={辨识ID}`
+如果标明了 `Authorization`，则连入 websocket 时需要传入 query string `?id={辨识ID}`
 
 假设你设置订阅时传入头
 
 ```json
 {
   "Content-Type": "application/x-www-form-urlencoded",
-  "X-BLive-Identifier": "abc"
+  "Authorization": "abc"
 }
 ```
 

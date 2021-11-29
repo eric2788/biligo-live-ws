@@ -158,7 +158,7 @@ func ToSet(arr []int64) set.Set {
 }
 
 func ToClientId(c *gin.Context) string {
-	identifier := c.GetHeader("X-BLive-Identifier")
+	identifier := c.GetHeader("Authorization")
 	if identifier == "" {
 		identifier = "anonymous"
 	}
