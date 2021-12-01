@@ -18,6 +18,11 @@ func Update(identifier string, rooms []int64) {
 
 func ExpireAfter(identifier string, expired <-chan time.Time) {
 
+	// 保險起見
+	if _, subBefore := subscribeMap.Load(identifier); subBefore {
+		return
+	}
+
 	connected := make(chan struct{})
 
 	go func() {
@@ -41,7 +46,7 @@ func ExpireAfter(identifier string, expired <-chan time.Time) {
 var void struct{}
 
 func CancelExpire(identifier string) {
-	if connected, ok := expireMap.Load(identifier); ok {
+	if connected, ok := expireMap.LoadAndDelete(identifier); ok {
 		conn := connected.(chan struct{})
 		conn <- void
 	}
