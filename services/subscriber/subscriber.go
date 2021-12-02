@@ -29,6 +29,10 @@ func ExpireAfter(identifier string, expired <-chan time.Time) {
 		for {
 			select {
 			case <-expired:
+				// 保險起見
+				if _, ok := expireMap.LoadAndDelete(identifier); !ok {
+					return
+				}
 				log.Printf("%v 的訂閱已過期。\n", identifier)
 				subscribeMap.Delete(identifier)
 				return
