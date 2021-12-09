@@ -11,6 +11,8 @@ import (
 
 func main() {
 
+	log.Printf("biligo-live-ws version %v", "0.1.2")
+
 	router := gin.Default()
 
 	router.Use(CORS())
@@ -27,8 +29,6 @@ func main() {
 	if len(os.Args) > 1 {
 		port = fmt.Sprintf(":%v", os.Args[1])
 	}
-
-	gin.SetMode(gin.DebugMode)
 
 	if err := router.Run(port); err != nil {
 		log.Fatal(err)

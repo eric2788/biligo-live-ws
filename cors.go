@@ -6,8 +6,16 @@ import (
 )
 
 func CORS() gin.HandlerFunc {
+	def := cors.DefaultConfig()
 	return cors.New(cors.Config{
 		AllowAllOrigins: true,
 		AllowWebSockets: true,
+		AllowMethods:    def.AllowMethods,
+		AllowHeaders: []string{
+			"Authorization",
+			"Content-Type",
+			"Origin",
+			"Content-Length",
+		},
 	})
 }

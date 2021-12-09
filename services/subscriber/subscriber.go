@@ -1,7 +1,9 @@
 package subscriber
 
 import (
+	"fmt"
 	set "github.com/deckarep/golang-set"
+	"github.com/gin-gonic/gin"
 	"log"
 	"sync"
 	"time"
@@ -10,11 +12,16 @@ import (
 var subscribeMap = sync.Map{}
 var expireMap = sync.Map{}
 
-func Update(ip string, rooms []int64) {
-	subscribeMap.Store(ip, rooms)
+func Update(identifier string, rooms []int64) {
+	subscribeMap.Store(identifier, rooms)
 }
 
-func ExpireAfter(ip string, expired <-chan time.Time) {
+func ExpireAfter(identifier string, expired <-chan time.Time) {
+
+	// 保險起見
+	if _, subBefore := subscribeMap.Load(identifier); subBefore {
+		return
+	}
 
 	connected := make(chan struct{})
 
@@ -22,45 +29,51 @@ func ExpireAfter(ip string, expired <-chan time.Time) {
 		for {
 			select {
 			case <-expired:
-				log.Printf("%v 的訂閱已過期。\n", ip)
-				subscribeMap.Delete(ip)
+				// 保險起見
+				if _, ok := expireMap.LoadAndDelete(identifier); !ok {
+					return
+				}
+				log.Printf("%v 的訂閱已過期。\n", identifier)
+				subscribeMap.Delete(identifier)
 				return
 			case <-connected:
+				log.Printf("已終止用戶 %v 的訂閱過期。", identifier)
 				return
 			}
 		}
 	}()
 
-	expireMap.Store(ip, connected)
+	expireMap.Store(identifier, connected)
+	log.Printf("已啟動用戶 %v 的訂閱過期。", identifier)
 }
 
 var void struct{}
 
-func CancelExpire(ip string) {
-	if connected, ok := expireMap.Load(ip); ok {
+func CancelExpire(identifier string) {
+	if connected, ok := expireMap.LoadAndDelete(identifier); ok {
 		conn := connected.(chan struct{})
 		conn <- void
 	}
 }
 
-func Get(ip string) ([]int64, bool) {
-	if res, ok := subscribeMap.Load(ip); ok {
+func Get(identifier string) ([]int64, bool) {
+	if res, ok := subscribeMap.Load(identifier); ok {
 		return res.([]int64), ok
 	} else {
 		return nil, ok
 	}
 }
 
-func GetOrEmpty(ip string) ([]int64, bool) {
-	res, ok := Get(ip)
+func GetOrEmpty(identifier string) ([]int64, bool) {
+	res, ok := Get(identifier)
 	if !ok {
 		res = []int64{}
 	}
 	return res, ok
 }
 
-func Poll(ip string) ([]int64, bool) {
-	if res, ok := subscribeMap.LoadAndDelete(ip); ok {
+func Poll(identifier string) ([]int64, bool) {
+	if res, ok := subscribeMap.LoadAndDelete(identifier); ok {
 		return res.([]int64), ok
 	} else {
 		return nil, ok
@@ -79,22 +92,22 @@ func GetAllRooms() set.Set {
 }
 
 func GetAllSubscribers(room int64) []string {
-	ips := make([]string, 0)
-	subscribeMap.Range(func(ip, rooms interface{}) bool {
+	identifiers := make([]string, 0)
+	subscribeMap.Range(func(identifier, rooms interface{}) bool {
 		for _, rm := range rooms.([]int64) {
 			if room == rm {
-				ips = append(ips, ip.(string))
+				identifiers = append(identifiers, identifier.(string))
 				break
 			}
 		}
 		return true
 	})
-	return ips
+	return identifiers
 }
 
-func Add(ip string, rooms []int64) []int64 {
+func Add(identifier string, rooms []int64) []int64 {
 
-	res, ok := Get(ip)
+	res, ok := Get(identifier)
 
 	if !ok {
 		res = make([]int64, 0)
@@ -104,7 +117,7 @@ func Add(ip string, rooms []int64) []int64 {
 		s.Add(i)
 	})
 
-	Update(ip, newRooms)
+	Update(identifier, newRooms)
 	return newRooms
 }
 
@@ -125,9 +138,9 @@ func UpdateRange(res []int64, rooms []int64, updater func(set.Set, int64)) []int
 	return newRooms
 }
 
-func Remove(ip string, rooms []int64) ([]int64, bool) {
+func Remove(identifier string, rooms []int64) ([]int64, bool) {
 
-	res, ok := Get(ip)
+	res, ok := Get(identifier)
 
 	if !ok {
 		return nil, false
@@ -137,18 +150,26 @@ func Remove(ip string, rooms []int64) ([]int64, bool) {
 		s.Remove(i)
 	})
 
-	Update(ip, newRooms)
+	Update(identifier, newRooms)
 	return newRooms, true
 }
 
-func Delete(ip string) {
-	subscribeMap.Delete(ip)
+func Delete(identifier string) {
+	subscribeMap.Delete(identifier)
 }
 
 func ToSet(arr []int64) set.Set {
-	s := set.NewSet()
+	s := set.NewThreadUnsafeSet()
 	for _, k := range arr {
 		s.Add(k)
 	}
 	return s
+}
+
+func ToClientId(c *gin.Context) string {
+	identifier := c.GetHeader("Authorization")
+	if identifier == "" {
+		identifier = "anonymous"
+	}
+	return fmt.Sprintf("%v@%v", c.ClientIP(), identifier)
 }

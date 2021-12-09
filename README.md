@@ -4,12 +4,25 @@
 
 ## 简介
 
-根据个人开发经验，每次开发与B站直播WS相关的项目时，都要烦恼自己所使用的编程语言有没有相关的B站WS处理库，如果没有的话更要自己实作一个，当中的 binary 转换和解压程序可谓相当麻烦。
+根据个人开发经验，每次开发与B站直播WS相关的项目时，都要烦恼自己所使用的编程语言有没有相关的B站WS处理库，如果没有的话更要自己实作一个，当中的 binary 处理和解压程序可谓相当麻烦。
+
+### 连线即用
+
+打开后，透过 POST 请求输入你的订阅房间列表，然后连入WS后即可开始接收JSON数据，**无需binary处理**。
+
+你也可以连入 WebSocket 之后才输入你的订阅
+
+### 即时增减
+
+可以透过 PUT 请求即时新增和删除批量房间号，此举**不需要**透过重连 WebSocket 来刷新
+
+### 无需后端
+
+透过直接存取公共 API 地址，可直接在前端获取B站直播数据而无需自架或开发后端。
 
 ## 直接使用
-**(暂定测试用，之后域名及位置会有所更改)**
 
-目前可供测试的 API 地址: https://blive.chu77.xyz/
+目前的公共 API 地址: https://blive.chu77.xyz/ **(暂定测试用，之后域名及位置会有所更改)**
 
 执行 GET / 后 显示
 
@@ -23,18 +36,33 @@
 
 可供测试的前端地址: https://eric2788.github.io/biligo-live-ws
 
-### 开箱即用
-
-打开后，透过 POST 请求输入你的订阅房间列表，然后连入WS后即可开始接收JSON数据。
-
 ### 使用方式
 
-#### 规格
+#### 头规格
 
 | Header      | Value |
 | ----------- | ----------- |
 | Content-Type      | application/x-www-form-urlencoded       |
+| Authorization | 非必填，辨识ID，一个IP多程序用的时候防止混淆；不填则用 `anonymous` |
 
+#### 注意
+
+如果标明了 `Authorization`，则连入 websocket 时需要传入 query string `?id={辨识ID}`
+
+假设你设置订阅时传入头
+
+```json
+{
+  "Content-Type": "application/x-www-form-urlencoded",
+  "Authorization": "abc"
+}
+```
+
+连入 WS 则需要使用
+
+``
+wss://blive.chu77.xyz/ws?id=abc
+``
 
 #### 步骤
 
@@ -64,19 +92,19 @@
 
 3. 开始透过 后缀为 /ws 的请求连入 WebSocket
 
-   如果上述都通过，再连入 WebSocket 的几秒后将会开始接收已经 JSON 序列化的 B站直播 数据
+   如果成功订阅，连入 WebSocket 的几秒后将会开始接收已经 JSON 序列化的 B站直播 数据
 
 ### API 参考
 
-| Path 路径 | Method 方法 | Payload 传入(非必要) | Response(200) 返回 | Error 错误 |
+| Path 路径 | Method 方法 | Payload 传入 | Response(200) 返回 | Error 错误 |
 | -------- | ----------- | ------------------ | ------------ | ----- |
 | /   | GET | 无 | 程序是否运行 | 无 |
 | /subscribe | GET | 无 | 目前的订阅列表(数组) | 无 |
-| /subscribe | POST | 订阅列表(数组) | 成功的订阅列表(数组) | 400 如果订阅列表为空或缺少数值 |
+| /subscribe | POST | 订阅列表(数组) | 成功的订阅列表(数组) | 400 如果輸入列表为空或缺少数值 |
 | /subscribe | DELETE | 删除订阅列表 | 无 | 无 |
 | /validate | POST | 无 | 无 | 400 如果准备未就绪 |
-| /subscribe/add | PUT | 要新增的批量订阅(数组) | 目前的订阅列表(数组) | 无 |
-| /subscribe/remove | PUT | 要删除的批量订阅(数组) | 目前的订阅列表(数组) | 400 如果之前尚未遞交订阅 |
+| /subscribe/add | PUT | 要新增的批量订阅(数组) | 目前的订阅列表(数组) | 400 如果輸入列表为空或缺少数值 |
+| /subscribe/remove | PUT | 要删除的批量订阅(数组) | 目前的订阅列表(数组) | 400 如果輸入列表为空或缺少数值/之前尚未递交订阅 |
 
 ### B站直播数据解析
 
@@ -85,8 +113,8 @@
 | key | 数值 | 类型 |
 | ---- | --- | ---- |
 | command | 直播数据指令 | string |
-| live_info | 直播房间资讯 | 详见下放 |
-| content | 直播数据原始内容(已转换为 json string) | byte[] |
+| live_info | 直播房间资讯 | 详见下方 |
+| content | 直播数据原始内容(已转换为json) | object |
 
 直播房间资讯
 
@@ -102,15 +130,17 @@
 
 ### 备注
 
-指令为 `HEARTBEAT_REPLY` 的**直播数据原始内容**已被序列化为格式
+- 指令为 `HEARTBEAT_REPLY` 的**直播数据原始内容**已被序列化为格式
 
-```json
-{
-   "popularity": 999999
-}
-```
-(999999为人气值)
+   ```json
+   {
+      "popularity": 999999
+   }
+   ```
+   (999999为人气值)
 
+
+- 直播数据原始内容(content) 如果转换 `object` 失败，将自动转为 `string`
 
 ## 私人部署
 

@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 	set "github.com/deckarep/golang-set"
+	biligo "github.com/eric2788/biligo-live-hotfix"
 	"github.com/eric2788/biligo-live-ws/services/api"
 	"github.com/gorilla/websocket"
-	biligo "github.com/iyear/biligo-live"
 	"log"
 	"time"
 )
@@ -34,10 +34,13 @@ func LaunchLiveServer(room int64, handle func(data LiveInfo, msg biligo.Msg)) (c
 	ctx, stop := context.WithCancel(context.Background())
 
 	go func() {
+
 		if err := live.Enter(ctx, room, "", 0); err != nil {
 			log.Printf("監聽房間 %v 時出現錯誤: %v\n", room, err)
 			listening.Remove(room)
+			stop()
 		}
+
 	}()
 
 	go func() {
