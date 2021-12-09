@@ -4,7 +4,6 @@ env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   artifact_name: biligo-live-ws
   version: 0.1.2
-  GOPRIVATE: github.com/eric2788
 
 on:
   push:
@@ -21,7 +20,11 @@ jobs:
       uses: actions/setup-go@v2
       with:
         go-version: 1.17
-      
+
+    # this is for private go module
+    - name: Setup private go module
+      run: git config --global url.https://${{ secrets.GH_ACCESS_TOKEN }}:x-oauth-basic@github.com/${{ github.actor }}.insteadOf https://github.com/${{ github.actor }}
+
     - name: Build Linux
       run: go build -o ./dist/biligo-ws-live
     
