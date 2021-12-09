@@ -4,7 +4,7 @@ env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   artifact_name: biligo-live-ws
   version: 0.1.2
-  
+  GOPRIVATE: github.com/eric2788
 
 on:
   push:
