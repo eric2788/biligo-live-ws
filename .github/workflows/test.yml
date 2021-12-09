@@ -1,7 +1,6 @@
 name: Test Pass
 
 env:
-  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   GOPRIVATE: github.com/eric2788
 
 on:
@@ -21,6 +20,6 @@ jobs:
       uses: actions/setup-go@v2
       with:
         go-version: 1.17
-
+    - run: git config --global url.https://${{ secrets.GITHUB_TOKEN }}@github.com/.insteadOf https://github.com/
     - name: Test
       run: go test -v ./...
