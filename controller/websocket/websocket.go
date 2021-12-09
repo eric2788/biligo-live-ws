@@ -3,11 +3,11 @@ package websocket
 import (
 	"encoding/json"
 	"fmt"
+	live "github.com/eric2788/biligo-live-hotfix"
 	"github.com/eric2788/biligo-live-ws/services/blive"
 	"github.com/eric2788/biligo-live-ws/services/subscriber"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
-	live "github.com/iyear/biligo-live"
 	"log"
 	"net/http"
 	"sync"
