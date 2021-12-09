@@ -3,7 +3,7 @@ name: Build Go Cross Platform
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   artifact_name: biligo-live-ws
-  version: 0.1.3
+  version: 0.1.4
 
 on:
   push:
