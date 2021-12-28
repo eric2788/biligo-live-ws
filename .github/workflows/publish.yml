@@ -21,10 +21,6 @@ jobs:
       with:
         go-version: 1.17
 
-    # this is for private go module
-    - name: Setup private go module
-      run: git config --global url.https://${{ secrets.GH_ACCESS_TOKEN }}:x-oauth-basic@github.com/${{ github.actor }}.insteadOf https://github.com/${{ github.actor }}
-
     - name: Build Linux
       run: go build -o ./dist/biligo-ws-live
     
@@ -43,10 +39,6 @@ jobs:
       uses: actions/setup-go@v2
       with:
         go-version: 1.17
-
-    # this is for private go module
-    - name: Setup private go module
-      run: git config --global url.https://${{ secrets.GH_ACCESS_TOKEN }}:x-oauth-basic@github.com/${{ github.actor }}.insteadOf https://github.com/${{ github.actor }}
 
     - name: Build Windows
       run: go build --buildmode=exe -o ./dist/biligo-ws-live.exe
@@ -85,9 +77,7 @@ jobs:
       with:
         tag_name: ${{ env.version }}
         release_name: Release ${{ github.repository }}-${{ env.version }}
-        body: |
-          .zip 內有 window 和 linux 的點擊運行程序
-          如欲無需 go 環境，可以下載 zip 直接打開程序運行
+        body_path: CHANGELOG.md
         draft: false
         prerelease: false
 
@@ -95,7 +85,7 @@ jobs:
       id: upload-release-zip
       uses: actions/upload-release-asset@v1
       with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
         asset_path: ./${{ env.artifact_name }}.zip
         asset_name: ${{ env.artifact_name }}.zip
         asset_content_type: application/zip
