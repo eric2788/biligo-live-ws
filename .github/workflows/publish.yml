@@ -3,16 +3,18 @@ name: Build Go Cross Platform
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   artifact_name: biligo-live-ws
-  version: 0.1.4
 
 on:
-  push:
-    branches: [ master ]
-    
-jobs:
+  release:
+    types:
+      - created
 
+jobs:
   build_linux:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        goarch: ["amd64", "arm64", "arm"]
     steps:
     - uses: actions/checkout@v2
 
@@ -23,6 +25,8 @@ jobs:
 
     - name: Build Linux
       run: go build -o ./dist/biligo-ws-live
+      env:
+        GOARCH: ${{ matrix.goarch }}
     
     - name: Upload a Build Artifact
       uses: actions/upload-artifact@v2.2.4
@@ -58,34 +62,21 @@ jobs:
       with:
         name: ${{ env.artifact_name }}
 
-    - name: Delete tag and release
-      id: delete-tag-release
-      uses: dev-drprasad/delete-tag-and-release@v0.1.2
-      with:
-        tag_name: ${{ env.version }}
-        delete_release: true
-
     - name: zip the directory
       run: |
         [ -d ${{steps.download.outputs.download-path}} ] && ls -la ${{ steps.download.outputs.download-path }}
         cd ${{steps.download.outputs.download-path}}
         zip -r ${{ env.artifact_name }}.zip .
-    
-    - name: Create Release
-      id: create_release
-      uses: actions/create-release@v1
-      with:
-        tag_name: ${{ env.version }}
-        release_name: Release ${{ github.repository }}-${{ env.version }}
-        body_path: CHANGELOG.md
-        draft: false
-        prerelease: false
+
+    - name: Get release
+      id: get_release
+      uses: bruceadams/get-release@v1.2.3
 
     - name: Upload Release
       id: upload-release-zip
       uses: actions/upload-release-asset@v1
       with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        upload_url: ${{ steps.get_release.outputs.upload_url }}
         asset_path: ./${{ env.artifact_name }}.zip
         asset_name: ${{ env.artifact_name }}.zip
         asset_content_type: application/zip
