@@ -17,9 +17,13 @@ func Update(identifier string, rooms []int64) {
 }
 
 func ExpireAfter(identifier string, expired <-chan time.Time) {
+	ExpireAfterWithCheck(identifier, expired, true)
+}
+
+func ExpireAfterWithCheck(identifier string, expired <-chan time.Time, checkExist bool) {
 
 	// 保險起見
-	if _, subBefore := subscribeMap.Load(identifier); subBefore {
+	if _, subBefore := subscribeMap.Load(identifier); subBefore && checkExist {
 		return
 	}
 

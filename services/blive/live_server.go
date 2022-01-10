@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	set "github.com/deckarep/golang-set"
-	biligo "github.com/eric2788/biligo-live-hotfix"
+	biligo "github.com/eric2788/biligo-live"
 	"github.com/eric2788/biligo-live-ws/services/api"
 	"github.com/gorilla/websocket"
 	"log"
