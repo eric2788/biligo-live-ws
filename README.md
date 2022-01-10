@@ -22,7 +22,7 @@
 
 ## 直接使用
 
-目前的公共 API 地址: https://blive.chu77.xyz/ **(暂定测试用，之后域名及位置会有所更改)**
+目前的公共 API 地址: https://blive.ericlamm.xyz/ (位置: HK)
 
 执行 GET / 后 显示
 
