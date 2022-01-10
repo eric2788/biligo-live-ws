@@ -22,7 +22,10 @@
 
 ## 直接使用
 
-目前的公共 API 地址: https://blive.ericlamm.xyz/ (位置: HK)
+目前的公共 API 地址: 
+
+- https://blive.ericlamm.xyz/ (位置: 香港)
+- https://blive-jp.ericlamm.xyz/ (位置: 大阪)
 
 执行 GET / 后 显示
 
