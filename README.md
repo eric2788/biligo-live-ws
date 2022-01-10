@@ -43,9 +43,9 @@
 
 #### 头规格
 
-| Header      | Value |
-| ----------- | ----------- |
-| Content-Type      | application/x-www-form-urlencoded       |
+| Header        | Value                                     |
+|---------------|-------------------------------------------|
+| Content-Type  | application/x-www-form-urlencoded         |
 | Authorization | 非必填，辨识ID，一个IP多程序用的时候防止混淆；不填则用 `anonymous` |
 
 #### 注意
@@ -99,35 +99,35 @@ wss://blive.chu77.xyz/ws?id=abc
 
 ### API 参考
 
-| Path 路径 | Method 方法 | Payload 传入 | Response(200) 返回 | Error 错误 |
-| -------- | ----------- | ------------------ | ------------ | ----- |
-| /   | GET | 无 | 程序是否运行 | 无 |
-| /subscribe | GET | 无 | 目前的订阅列表(数组) | 无 |
-| /subscribe | POST | 订阅列表(数组) | 成功的订阅列表(数组) | 400 如果輸入列表为空或缺少数值 |
-| /subscribe | DELETE | 删除订阅列表 | 无 | 无 |
-| /validate | POST | 无 | 无 | 400 如果准备未就绪 |
-| /subscribe/add | PUT | 要新增的批量订阅(数组) | 目前的订阅列表(数组) | 400 如果輸入列表为空或缺少数值 |
-| /subscribe/remove | PUT | 要删除的批量订阅(数组) | 目前的订阅列表(数组) | 400 如果輸入列表为空或缺少数值/之前尚未递交订阅 |
+| Path 路径           | Method 方法 | Payload 传入   | Response(200) 返回 | Error 错误                   |
+|-------------------|-----------|--------------|------------------|----------------------------|
+| /                 | GET       | 无            | 程序是否运行           | 无                          |
+| /subscribe        | GET       | 无            | 目前的订阅列表(数组)      | 无                          |
+| /subscribe        | POST      | 订阅列表(数组)     | 成功的订阅列表(数组)      | 400 如果輸入列表为空或缺少数值          |
+| /subscribe        | DELETE    | 删除订阅列表       | 无                | 无                          |
+| /validate         | POST      | 无            | 无                | 400 如果准备未就绪                |
+| /subscribe/add    | PUT       | 要新增的批量订阅(数组) | 目前的订阅列表(数组)      | 400 如果輸入列表为空或缺少数值          |
+| /subscribe/remove | PUT       | 要删除的批量订阅(数组) | 目前的订阅列表(数组)      | 400 如果輸入列表为空或缺少数值/之前尚未递交订阅 |
 
 ### B站直播数据解析
 
 格式如下
 
-| key | 数值 | 类型 |
-| ---- | --- | ---- |
-| command | 直播数据指令 | string |
-| live_info | 直播房间资讯 | 详见下方 |
-| content | 直播数据原始内容(已转换为json) | object |
+| key       | 数值                 | 类型     |
+|-----------|--------------------|--------|
+| command   | 直播数据指令             | string |
+| live_info | 直播房间资讯             | 详见下方   |
+| content   | 直播数据原始内容(已转换为json) | object |
 
 直播房间资讯
 
-| key | 数值 | 类型 |
-| ---- | --- | ---- |
-| room_id | 直播房间号 | int64 |
-| uid | 直播用户ID | int64 |
-| title | 直播标题 | int64 |
-| name | 直播名称 | string |
-| cover | 直播封面网址 | string |
+| key     | 数值     | 类型     |
+|---------|--------|--------|
+| room_id | 直播房间号  | int64  |
+| uid     | 直播用户ID | int64  |
+| title   | 直播标题   | int64  |
+| name    | 直播名称   | string |
+| cover   | 直播封面网址 | string |
 
 **每次开播时都会自动刷新一次直播房间资讯**
 
@@ -148,7 +148,7 @@ wss://blive.chu77.xyz/ws?id=abc
 ## 私人部署
 
 ### Docker
-详见 Dockerfile
+[docker.io](https://hub.docker.com/r/eric1008818/biligo-live-ws) 或 详见 Dockerfile
 
 ### Linux / Windows
 
