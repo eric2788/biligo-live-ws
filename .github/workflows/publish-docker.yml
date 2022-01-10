@@ -42,11 +42,3 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           platforms: linux/arm64/v8, linux/amd64
-
-      # after pushed image, remove the tag
-      - name: Delete Tag
-      - uses: dev-drprasad/delete-tag-and-release@v0.2.0
-        with:
-           tag_name: docker-push
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
