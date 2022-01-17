@@ -14,7 +14,7 @@ import (
 var listening = set.NewSet()
 var excepted = set.NewSet()
 
-func LaunchLiveServer(room int64, handle func(data LiveInfo, msg biligo.Msg)) (context.CancelFunc, error) {
+func LaunchLiveServer(room int64, handle func(data *LiveInfo, msg biligo.Msg)) (context.CancelFunc, error) {
 
 	liveInfo, err := GetLiveInfo(room) // 獲取直播資訊
 
@@ -60,7 +60,7 @@ func LaunchLiveServer(room int64, handle func(data LiveInfo, msg biligo.Msg)) (c
 						liveInfo = latestInfo
 					}
 				}
-				handle(*liveInfo, tp.Msg)
+				handle(liveInfo, tp.Msg)
 			case <-ctx.Done():
 				log.Printf("房間 %v 監聽中止。\n", room)
 				listening.Remove(room)
@@ -83,7 +83,7 @@ type LiveInfo struct {
 
 func GetLiveInfo(room int64) (*LiveInfo, error) {
 
-	info, err := api.GetRoomInfo(room)
+	info, err := api.GetRoomInfoWithOption(room, true)
 
 	if err != nil {
 		log.Println("索取房間資訊時出現錯誤: ", err)
