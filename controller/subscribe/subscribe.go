@@ -124,6 +124,8 @@ func GetSubscribesArr(c *gin.Context, checkExist bool) ([]int64, bool) {
 					log.Printf("房間 %v 無效，已略過 \n", roomId)
 				}
 			}
+		} else {
+			roomSet.Add(roomId)
 		}
 
 	}
