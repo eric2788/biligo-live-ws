@@ -34,7 +34,9 @@ func ClearSubscribe(c *gin.Context) {
 }
 
 func AddSubscribe(c *gin.Context) {
-	rooms, ok := GetSubscribesArr(c, true)
+
+	dontCheck := c.Query("validate") == "false" // 是否不检查房间讯息
+	rooms, ok := GetSubscribesArr(c, !dontCheck)
 
 	if !ok {
 		return
@@ -69,8 +71,8 @@ func RemoveSubscribe(c *gin.Context) {
 }
 
 func Subscribe(c *gin.Context) {
-
-	rooms, ok := GetSubscribesArr(c, false) // 一次性訂閱不檢查房間訊息是否存在
+	dontCheck := c.Query("validate") == "false" // 是否不检查房间讯息
+	rooms, ok := GetSubscribesArr(c, !dontCheck)
 
 	if !ok {
 		return
