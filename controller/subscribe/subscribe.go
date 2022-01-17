@@ -34,7 +34,7 @@ func ClearSubscribe(c *gin.Context) {
 }
 
 func AddSubscribe(c *gin.Context) {
-	rooms, ok := GetSubscribesArr(c)
+	rooms, ok := GetSubscribesArr(c, true)
 
 	if !ok {
 		return
@@ -49,7 +49,8 @@ func AddSubscribe(c *gin.Context) {
 }
 
 func RemoveSubscribe(c *gin.Context) {
-	rooms, ok := GetSubscribesArr(c)
+
+	rooms, ok := GetSubscribesArr(c, false) // 刪除訂閱不檢查房間訊息是否存在
 
 	if !ok {
 		return
@@ -69,7 +70,7 @@ func RemoveSubscribe(c *gin.Context) {
 
 func Subscribe(c *gin.Context) {
 
-	rooms, ok := GetSubscribesArr(c)
+	rooms, ok := GetSubscribesArr(c, false) // 一次性訂閱不檢查房間訊息是否存在
 
 	if !ok {
 		return
@@ -83,7 +84,7 @@ func Subscribe(c *gin.Context) {
 	c.IndentedJSON(200, rooms)
 }
 
-func GetSubscribesArr(c *gin.Context) ([]int64, bool) {
+func GetSubscribesArr(c *gin.Context, checkExist bool) ([]int64, bool) {
 
 	subArr, ok := c.GetPostFormArray("subscribes")
 	if !ok {
@@ -106,18 +107,23 @@ func GetSubscribesArr(c *gin.Context) ([]int64, bool) {
 			continue
 		}
 
-		realRoom, roomErr := api.GetRealRoom(roomId)
+		if checkExist {
 
-		if realRoom > 0 {
-			roomSet.Add(realRoom)
-		} else {
-			log.Printf("房間 %v 無效，已略過 \n", roomId)
+			realRoom, roomErr := api.GetRealRoom(roomId)
+
+			if roomErr != nil {
+				log.Printf("獲取房間訊息時出現錯誤: %v", roomErr)
+				_ = c.Error(roomErr)
+				return nil, false
+			} else {
+				if realRoom > 0 {
+					roomSet.Add(realRoom)
+				} else {
+					log.Printf("房間 %v 無效，已略過 \n", roomId)
+				}
+			}
 		}
 
-		if roomErr != nil {
-			_ = c.Error(roomErr)
-			return nil, false
-		}
 	}
 
 	// 有生之年我居然還要用 loop 轉泛型 array 同 type array, 醉了
