@@ -144,7 +144,7 @@ wss://blive.chu77.xyz/ws?id=abc
 
 
 - 直播数据原始内容(content) 如果转换 `object` 失败，将自动转为 `string`
-- 为了防止 B站 API 调用过度频繁，只有新增订阅才会检查房间讯息是否存在，一次性设置订阅和批量删除订阅均不会检查房间讯息是否存在
+- 为了防止 B站 API 调用过度频繁，调用 `/subscribe` 或 `/subscribe/add` 时可以傳入 query `?validate=false` 来取消验证房间讯息
 
 ## 私人部署
 
