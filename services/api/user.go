@@ -12,9 +12,12 @@ const UserInfoApi = "https://api.bilibili.com/x/space/acc/info?mid=%v&jsonp=json
 
 var userCaches = sync.Map{}
 
-func GetUserInfo(uid int64) (*UserInfo, error) {
-	if res, ok := userCaches.Load(uid); ok {
-		return res.(*UserInfo), nil
+func GetUserInfo(uid int64, forceUpdate bool) (*UserInfo, error) {
+
+	if !forceUpdate {
+		if res, ok := userCaches.Load(uid); ok {
+			return res.(*UserInfo), nil
+		}
 	}
 
 	resp, err := http.Get(fmt.Sprintf(UserInfoApi, uid))
@@ -49,7 +52,7 @@ func GetUserInfo(uid int64) (*UserInfo, error) {
 }
 
 func UserExist(uid int64) (bool, error) {
-	res, err := GetUserInfo(uid)
+	res, err := GetUserInfo(uid, false)
 
 	if err != nil {
 		return false, err
