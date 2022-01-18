@@ -14,9 +14,9 @@ import (
 var listening = set.NewSet()
 var excepted = set.NewSet()
 
-func LaunchLiveServer(room int64, handle func(data LiveInfo, msg biligo.Msg)) (context.CancelFunc, error) {
+func LaunchLiveServer(room int64, handle func(data *LiveInfo, msg biligo.Msg)) (context.CancelFunc, error) {
 
-	liveInfo, err := GetLiveInfo(room) // 獲取直播資訊
+	liveInfo, err := GetLiveInfo(room, false) // 獲取直播資訊
 
 	if err != nil {
 		return nil, err
@@ -55,12 +55,12 @@ func LaunchLiveServer(room int64, handle func(data LiveInfo, msg biligo.Msg)) (c
 				if _, ok := tp.Msg.(*biligo.MsgLive); ok {
 					log.Printf("房間 %v 開播，正在更新直播資訊...\n", room)
 					// 更新一次直播资讯
-					if latestInfo, err := GetLiveInfo(room); err == nil {
+					if latestInfo, err := GetLiveInfo(room, true); err == nil {
 						// 更新成功， 更新
 						liveInfo = latestInfo
 					}
 				}
-				handle(*liveInfo, tp.Msg)
+				handle(liveInfo, tp.Msg)
 			case <-ctx.Done():
 				log.Printf("房間 %v 監聽中止。\n", room)
 				listening.Remove(room)
@@ -81,9 +81,9 @@ type LiveInfo struct {
 	Cover  string `json:"cover"`
 }
 
-func GetLiveInfo(room int64) (*LiveInfo, error) {
+func GetLiveInfo(room int64, forceUpdate bool) (*LiveInfo, error) {
 
-	info, err := api.GetRoomInfo(room)
+	info, err := api.GetRoomInfoWithOption(room, forceUpdate)
 
 	if err != nil {
 		log.Println("索取房間資訊時出現錯誤: ", err)
@@ -97,7 +97,7 @@ func GetLiveInfo(room int64) (*LiveInfo, error) {
 	}
 
 	data := info.Data
-	user, err := api.GetUserInfo(data.Uid)
+	user, err := api.GetUserInfo(data.Uid, forceUpdate)
 
 	if err != nil {
 		log.Println("索取用戶資訊時出現錯誤: ", err)

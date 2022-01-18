@@ -80,7 +80,7 @@ func OpenWebSocket(c *gin.Context) {
 	}()
 }
 
-func handleBLiveMessage(room int64, info blive.LiveInfo, msg live.Msg) {
+func handleBLiveMessage(room int64, info *blive.LiveInfo, msg live.Msg) {
 
 	raw := msg.Raw()
 
@@ -157,7 +157,7 @@ func HandleClose(identifier string) {
 }
 
 type BLiveData struct {
-	Command  string         `json:"command"`
-	LiveInfo blive.LiveInfo `json:"live_info"`
-	Content  interface{}    `json:"content"`
+	Command  string          `json:"command"`
+	LiveInfo *blive.LiveInfo `json:"live_info"`
+	Content  interface{}     `json:"content"`
 }

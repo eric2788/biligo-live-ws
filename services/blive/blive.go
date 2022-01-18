@@ -10,7 +10,7 @@ import (
 
 var stopMap = make(map[int64]context.CancelFunc)
 
-func SubscribedRoomTracker(handleWs func(int64, LiveInfo, live.Msg)) {
+func SubscribedRoomTracker(handleWs func(int64, *LiveInfo, live.Msg)) {
 	log.Println("已啟動房間訂閱監聽。")
 	for {
 		time.Sleep(time.Second * 5)
@@ -25,7 +25,7 @@ func SubscribedRoomTracker(handleWs func(int64, LiveInfo, live.Msg)) {
 
 			log.Println("正在啟動監聽房間: ", room)
 
-			stop, err := LaunchLiveServer(room, func(data LiveInfo, msg live.Msg) {
+			stop, err := LaunchLiveServer(room, func(data *LiveInfo, msg live.Msg) {
 				handleWs(room, data, msg)
 			})
 

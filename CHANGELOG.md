@@ -3,4 +3,4 @@
 
 更新記錄：
 
-- `biligo-live` 的依賴 從私人的 `eric2788/biligo-live-hotfix` 改用公開的 `eric2788/biligo-live`
+- 修復直播資訊沒有更新的問題

@@ -11,7 +11,7 @@ import (
 
 func main() {
 
-	log.Printf("biligo-live-ws version %v", "0.1.5")
+	log.Printf("biligo-live-ws version %v", "0.1.6")
 
 	router := gin.Default()
 
