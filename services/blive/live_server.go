@@ -14,6 +14,8 @@ import (
 var listening = set.NewSet()
 var excepted = set.NewSet()
 
+var Debug = true
+
 func LaunchLiveServer(room int64, handle func(data *LiveInfo, msg biligo.Msg)) (context.CancelFunc, error) {
 
 	liveInfo, err := GetLiveInfo(room, false) // 獲取直播資訊
@@ -22,7 +24,7 @@ func LaunchLiveServer(room int64, handle func(data *LiveInfo, msg biligo.Msg)) (
 		return nil, err
 	}
 
-	live := biligo.NewLive(true, 30*time.Second, 0, func(err error) {
+	live := biligo.NewLive(Debug, 30*time.Second, 0, func(err error) {
 		log.Fatal(err)
 	})
 

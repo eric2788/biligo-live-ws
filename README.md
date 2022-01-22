@@ -158,10 +158,11 @@ wss://blive.chu77.xyz/ws?id=abc
 运行参数(非必要)
 
 ```bash
-./biligo-live-ws 端口
+./biligo-live-ws --port 端口 --release
 ```
 
-端口: 不填则 8080
+- `port`: 不填则 8080
+- `release`: 添加此参数即等同设置环境参数中 `GIN_MODE` 为 `release` (即 `production mode`)
 
 ## 鸣谢
 
