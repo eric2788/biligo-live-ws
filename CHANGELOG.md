@@ -3,4 +3,5 @@
 
 更新記錄：
 
-- 修復直播資訊沒有更新的問題
+- 新增 flag (`--port` 和 `--release`)
+- Production Mode 时将不再 `heartbeat reply` 洗屏
