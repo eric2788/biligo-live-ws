@@ -11,8 +11,17 @@ import (
 	"time"
 )
 
-var listening = set.NewSet()
-var excepted = set.NewSet()
+var (
+	listening = set.NewSet()
+	excepted  = set.NewSet()
+	lived     = set.NewSet()
+)
+
+func antiDuplicateLive(room int64) {
+	lived.Add(room)
+	<-time.After(time.Minute * 5)
+	lived.Remove(room)
+}
 
 var Debug = true
 
@@ -54,7 +63,18 @@ func LaunchLiveServer(room int64, handle func(data *LiveInfo, msg biligo.Msg)) (
 					continue
 				}
 				// 開播 !?
+				// 此指令會推送兩次
+				// 第一次是 按下開播
+				// 第二次是 B站 收到推流
+				// 因此需要去重
 				if _, ok := tp.Msg.(*biligo.MsgLive); ok {
+
+					// 開播去重
+					if lived.Contains(room) {
+						continue
+					}
+					go antiDuplicateLive(room)
+
 					log.Printf("房間 %v 開播，正在更新直播資訊...\n", room)
 					// 更新一次直播资讯
 					if latestInfo, err := GetLiveInfo(room, true); err == nil {
