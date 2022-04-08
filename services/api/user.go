@@ -21,9 +21,9 @@ func GetUserInfo(uid int64, forceUpdate bool) (*UserInfo, error) {
 			return userInfo, nil
 		} else {
 			if e, ok := err.(*database.EmptyError); ok {
-				log.Printf("%v, 使用 web api 更新", e)
+				log.Printf("%v, 正在請求B站 API", e)
 			} else {
-				log.Printf("從數據庫獲取用戶資訊 %v 時出現錯誤: %v, 使用 web api 更新", uid, err)
+				log.Printf("從數據庫獲取用戶資訊 %v 時出現錯誤: %v, 正在請求B站 API", uid, err)
 			}
 		}
 	}

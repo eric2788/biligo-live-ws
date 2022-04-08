@@ -193,6 +193,11 @@ func GetLiveInfo(room int64) (*LiveInfo, error) {
 
 	if user.Data == nil {
 		log.Println("索取用戶資訊時出現錯誤: ", user.Message)
+		// 404 not found
+		if user.Code == -404 {
+			log.Printf("用戶 %v 不存在，已排除該房間。", data.Uid)
+			excepted.Add(room)
+		}
 		return nil, errors.New(user.Message)
 	}
 
