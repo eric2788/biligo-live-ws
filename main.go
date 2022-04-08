@@ -18,7 +18,7 @@ func main() {
 
 	flag.Parse()
 
-	log.Printf("biligo-live-ws version %v", "0.1.7")
+	log.Printf("biligo-live-ws version %v", "0.1.8")
 
 	if *release {
 		gin.SetMode(gin.ReleaseMode)
