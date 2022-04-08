@@ -3,20 +3,28 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/eric2788/biligo-live-ws/services/database"
 	"io"
+	"log"
 	"net/http"
-	"sync"
 )
 
 const UserInfoApi = "https://api.bilibili.com/x/space/acc/info?mid=%v&jsonp=jsonp"
 
-var userCaches = sync.Map{}
-
 func GetUserInfo(uid int64, forceUpdate bool) (*UserInfo, error) {
 
+	dbKey := fmt.Sprintf("user:%v", uid)
+
 	if !forceUpdate {
-		if res, ok := userCaches.Load(uid); ok {
-			return res.(*UserInfo), nil
+		var userInfo = &UserInfo{}
+		if err := database.GetFromDB(dbKey, userInfo); err == nil {
+			return userInfo, nil
+		} else {
+			if e, ok := err.(*database.EmptyError); ok {
+				log.Printf("%v, 使用 web api 更新", e)
+			} else {
+				log.Printf("從數據庫獲取用戶資訊 %v 時出現錯誤: %v, 使用 web api 更新", uid, err)
+			}
 		}
 	}
 
@@ -46,7 +54,12 @@ func GetUserInfo(uid int64, forceUpdate bool) (*UserInfo, error) {
 		return nil, err
 	}
 
-	userCaches.Store(uid, &userInfo)
+	if err := database.PutToDB(dbKey, &userInfo); err != nil {
+		log.Printf("更新用戶資訊 %v 到數據庫時出現錯誤: %v", uid, err)
+	} else {
+		log.Printf("更新用戶資訊 %v 到數據庫成功", uid)
+	}
+
 	return &userInfo, nil
 
 }

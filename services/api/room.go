@@ -3,14 +3,13 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/eric2788/biligo-live-ws/services/database"
 	"io"
+	"log"
 	"net/http"
-	"sync"
 )
 
 const RoomInfoApi string = "https://api.live.bilibili.com/room/v1/Room/get_info?room_id=%v"
-
-var roomCaches = sync.Map{}
 
 func GetRoomInfo(room int64) (*RoomInfo, error) {
 	return GetRoomInfoWithOption(room, false)
@@ -18,9 +17,18 @@ func GetRoomInfo(room int64) (*RoomInfo, error) {
 
 func GetRoomInfoWithOption(room int64, forceUpdate bool) (*RoomInfo, error) {
 
+	dbKey := fmt.Sprintf("room:%v", room)
+
 	if !forceUpdate {
-		if res, ok := roomCaches.Load(room); ok {
-			return res.(*RoomInfo), nil
+		var roomInfo = &RoomInfo{}
+		if err := database.GetFromDB(dbKey, roomInfo); err == nil {
+			return roomInfo, nil
+		} else {
+			if e, ok := err.(*database.EmptyError); ok {
+				log.Printf("%v, 使用 web api 更新", e)
+			} else {
+				log.Printf("從數據庫獲取房間資訊 %v 時出現錯誤: %v, 使用 web api 更新", room, err)
+			}
 		}
 	}
 
@@ -50,7 +58,11 @@ func GetRoomInfoWithOption(room int64, forceUpdate bool) (*RoomInfo, error) {
 		return nil, err
 	}
 
-	roomCaches.Store(room, &roomInfo)
+	if err := database.PutToDB(dbKey, roomInfo); err != nil {
+		log.Printf("從數據庫更新房間資訊 %v 時出現錯誤: %v", room, err)
+	} else {
+		log.Printf("成功更新房間資訊 %v 到數據庫", room)
+	}
 	return &roomInfo, nil
 
 }

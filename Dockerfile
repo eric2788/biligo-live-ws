@@ -17,4 +17,6 @@ ENV GIN_MODE=release
 
 EXPOSE 8080
 
+VOLUME /cache
+
 ENTRYPOINT [ "/blive" ]

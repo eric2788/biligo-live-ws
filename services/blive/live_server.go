@@ -3,6 +3,7 @@ package blive
 import (
 	"context"
 	"errors"
+	"fmt"
 	set "github.com/deckarep/golang-set"
 	biligo "github.com/eric2788/biligo-live"
 	"github.com/eric2788/biligo-live-ws/services/api"
@@ -30,6 +31,18 @@ func LaunchLiveServer(room int64, handle func(data *LiveInfo, msg biligo.Msg)) (
 	liveInfo, err := GetLiveInfo(room, false) // 獲取直播資訊
 
 	if err != nil {
+
+		if _, ok := err.(*TooFastError); ok {
+			// 假設為已添加監聽以防止重複監聽
+			listening.Add(room)
+			go func() {
+				log.Printf("將於十分鐘後再嘗試監聽直播: %d", room)
+				// 十分鐘冷卻後再重試
+				<-time.After(time.Minute * 10)
+				listening.Remove(room)
+			}()
+		}
+
 		return nil, err
 	}
 
@@ -99,17 +112,31 @@ type LiveInfo struct {
 	Cover  string `json:"cover"`
 }
 
+type TooFastError struct {
+	RoomId int64
+}
+
+func (e *TooFastError) Error() string {
+	return fmt.Sprintf("房間 %v 請求頻繁", e.RoomId)
+}
+
 func GetLiveInfo(room int64, forceUpdate bool) (*LiveInfo, error) {
 
 	info, err := api.GetRoomInfoWithOption(room, forceUpdate)
 
 	if err != nil {
-		log.Println("索取房間資訊時出現錯誤: ", err)
+		log.Printf("索取房間資訊 %v 時出現錯誤: %v", room, err)
 		return nil, err
 	}
 
+	// 房間資訊請求過快被攔截
+	if info.Code == -412 {
+		log.Printf("錯誤: 房間 %v 請求頻繁被攔截", room)
+		return nil, &TooFastError{RoomId: room}
+	}
+
 	if info.Data == nil {
-		log.Println("索取房間資訊時出現錯誤: ", info.Message)
+		log.Printf("索取房間資訊 %v 時出現錯誤: %v", room, info.Message)
 		excepted.Add(room)
 		return nil, errors.New(info.Message)
 	}
@@ -122,9 +149,15 @@ func GetLiveInfo(room int64, forceUpdate bool) (*LiveInfo, error) {
 		return nil, err
 	}
 
+	// 用戶資訊請求過快被攔截
+	if user.Code == -412 {
+		log.Printf("錯誤: 用戶 %v 請求頻繁被攔截", data.Uid)
+		return nil, &TooFastError{RoomId: room}
+	}
+
 	if user.Data == nil {
-		log.Println("索取用戶資訊時出現錯誤: ", err)
-		return nil, errors.New(info.Message)
+		log.Println("索取用戶資訊時出現錯誤: ", user.Message)
+		return nil, errors.New(user.Message)
 	}
 
 	liveInfo := &LiveInfo{
