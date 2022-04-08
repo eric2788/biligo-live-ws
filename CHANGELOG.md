@@ -3,5 +3,7 @@
 
 更新記錄：
 
-- 新增 flag (`--port` 和 `--release`)
-- Production Mode 时将不再 `heartbeat reply` 洗屏
+- 新增直播資訊更新去重 (五分鐘冷卻)
+- 新增 levelDB 本地數據庫防止請求頻繁 (開播時才會更新)
+- 錯誤訊息添加明確房間號和用戶號方便 debug
+- 當請求過快被攔截時將等待十分鐘後重新監聽

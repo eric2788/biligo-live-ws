@@ -6,6 +6,7 @@ import (
 	"github.com/eric2788/biligo-live-ws/controller/subscribe"
 	ws "github.com/eric2788/biligo-live-ws/controller/websocket"
 	"github.com/eric2788/biligo-live-ws/services/blive"
+	"github.com/eric2788/biligo-live-ws/services/database"
 	"github.com/gin-gonic/gin"
 	"log"
 	"os"
@@ -23,6 +24,13 @@ func main() {
 	if *release {
 		gin.SetMode(gin.ReleaseMode)
 		blive.Debug = false
+	}
+
+	log.Println("正在初始化數據庫...")
+	if err := database.StartDB(); err != nil {
+		log.Fatalf("初始化數據庫時出現嚴重錯誤: %v", err)
+	} else {
+		log.Println("數據庫已成功初始化。")
 	}
 
 	router := gin.Default()
