@@ -5,6 +5,7 @@ import (
 	"encoding/gob"
 	"fmt"
 	"github.com/syndtr/goleveldb/leveldb"
+	"github.com/syndtr/goleveldb/leveldb/opt"
 	"log"
 	"sync"
 )
@@ -32,24 +33,27 @@ func StartDB() error {
 
 func GetFromDB(key string, arg interface{}) error {
 	lock.Lock()
-	db, err := leveldb.OpenFile(DbPath, nil)
-	defer func() {
-		if err := db.Close(); err != nil {
-			log.Println("關閉數據庫時出現錯誤:", err)
-		}
-		lock.Unlock()
-	}()
+	defer lock.Unlock()
+	db, err := leveldb.OpenFile(DbPath, &opt.Options{
+		NoSync:   true,
+		ReadOnly: true,
+	})
 	if err != nil {
 		log.Println("開啟數據庫時出現錯誤:", err)
 		return err
 	}
+	defer func() {
+		if err := db.Close(); err != nil {
+			log.Println("關閉數據庫時出現錯誤:", err)
+		}
+	}()
 	value, err := db.Get([]byte(key), nil)
-	if err != nil {
+	if err != nil && err != leveldb.ErrNotFound {
 		log.Println("從數據庫獲取數值時出現錯誤:", err)
 		return err
 	}
 	// empty value
-	if len(value) == 0 {
+	if err == leveldb.ErrNotFound {
 		return &EmptyError{key}
 	}
 	buffer := bytes.NewBuffer(value)
@@ -78,17 +82,17 @@ func PutToDB(key string, value interface{}) error {
 
 func UpdateDB(update func(db *leveldb.DB) error) error {
 	lock.Lock()
-	db, err := leveldb.OpenFile(DbPath, nil)
-	defer func() {
-		if err := db.Close(); err != nil {
-			log.Println("關閉數據庫時出現錯誤:", err)
-		}
-		lock.Unlock()
-	}()
+	defer lock.Unlock()
+	db, err := leveldb.OpenFile(DbPath, &opt.Options{NoSync: true})
 	if err != nil {
 		log.Println("開啟數據庫時出現錯誤:", err)
 		return err
 	}
+	defer func() {
+		if err := db.Close(); err != nil {
+			log.Println("關閉數據庫時出現錯誤:", err)
+		}
+	}()
 	err = update(db)
 	if err != nil {
 		log.Println("更新數據庫時出現錯誤: ", err)
