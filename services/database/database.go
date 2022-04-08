@@ -6,10 +6,15 @@ import (
 	"fmt"
 	"github.com/syndtr/goleveldb/leveldb"
 	"log"
+	"sync"
 )
 
 const (
 	DbPath = "./cache"
+)
+
+var (
+	lock = sync.Mutex{}
 )
 
 type EmptyError struct {
@@ -26,6 +31,8 @@ func StartDB() error {
 }
 
 func GetFromDB(key string, arg interface{}) error {
+	lock.Lock()
+	defer lock.Unlock()
 	db, err := leveldb.OpenFile(DbPath, nil)
 	defer func() {
 		if err := db.Close(); err != nil {
@@ -70,6 +77,8 @@ func PutToDB(key string, value interface{}) error {
 }
 
 func UpdateDB(update func(db *leveldb.DB) error) error {
+	lock.Lock()
+	defer lock.Unlock()
 	db, err := leveldb.OpenFile(DbPath, nil)
 	defer func() {
 		if err := db.Close(); err != nil {
