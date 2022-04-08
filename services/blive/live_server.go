@@ -83,9 +83,7 @@ func LaunchLiveServer(room int64, handle func(data *LiveInfo, msg biligo.Msg)) (
 						go coolDownLiveFetch(room)
 						log.Printf("房間 %v 開播，正在更新直播資訊...\n", room)
 						// 更新一次直播资讯
-						if err := UpdateLiveInfo(liveInfo, room); err != nil {
-							log.Printf("更新直播資訊時出現錯誤: %v\n", err)
-						}
+						UpdateLiveInfo(liveInfo, room)
 					}
 
 					// 但開播指令推送多次保留
@@ -120,39 +118,38 @@ func (e *TooFastError) Error() string {
 }
 
 // UpdateLiveInfo 刷新直播資訊，強制更新緩存
-func UpdateLiveInfo(info *LiveInfo, room int64) error {
+func UpdateLiveInfo(info *LiveInfo, room int64) {
 
 	latestRoomInfo, err := api.GetRoomInfoWithOption(room, true)
 
-	if err != nil {
-		return err // 有錯誤，略過更新
+	// 房間資訊請求成功
+	if err == nil && latestRoomInfo.Code == 0 {
+		// 更新房間資訊
+		info.Cover = latestRoomInfo.Data.UserCover
+		info.Title = latestRoomInfo.Data.Title
+		info.UID = latestRoomInfo.Data.Uid
+		log.Printf("房間直播資訊 %v 刷新成功。", room)
+	} else {
+		if err != nil {
+			log.Printf("房間直播資訊 %v 刷新失敗: %v", room, err)
+		} else {
+			log.Printf("房間直播資訊 %v 刷新失敗: %v", room, latestRoomInfo.Message)
+		}
 	}
-
-	// 房間資訊請求過快被攔截
-	if latestRoomInfo.Code == -412 {
-		return fmt.Errorf("房間 %v 請求頻繁被攔截", room)
-	}
-
-	// 更新房間資訊
-	info.Cover = latestRoomInfo.Data.UserCover
-	info.Title = latestRoomInfo.Data.Title
-	info.UID = latestRoomInfo.Data.Uid
 
 	latestUserInfo, err := api.GetUserInfo(info.UID, true)
-
-	if err != nil {
-		return err // 有錯誤，略過更新用戶資訊
-	}
-
 	// 用戶資訊請求過快被攔截
-	if latestUserInfo.Code == -412 {
-		return fmt.Errorf("用戶 %v 請求頻繁被攔截", info.UID)
+	if latestUserInfo.Code == 0 {
+		// 更新用戶資訊
+		info.Name = latestUserInfo.Data.Name
+		log.Printf("房間用戶資訊 %v 刷新成功。", info.UID)
+	} else {
+		if err != nil {
+			log.Printf("房間用戶資訊 %v 刷新失敗: %v", info.UID, err)
+		} else {
+			log.Printf("房間用戶資訊 %v 刷新失敗: %v", info.UID, latestUserInfo.Message)
+		}
 	}
-
-	// 更新用戶資訊
-	info.Name = latestUserInfo.Data.Name
-
-	return nil
 }
 
 // GetLiveInfo 獲取直播資訊，不強制更新緩存
