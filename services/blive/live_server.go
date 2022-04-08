@@ -28,7 +28,7 @@ var Debug = true
 
 func LaunchLiveServer(room int64, handle func(data *LiveInfo, msg biligo.Msg)) (context.CancelFunc, error) {
 
-	liveInfo, err := GetLiveInfo(room, false) // 獲取直播資訊
+	liveInfo, err := GetLiveInfo(room) // 獲取直播資訊
 
 	if err != nil {
 
@@ -83,9 +83,8 @@ func LaunchLiveServer(room int64, handle func(data *LiveInfo, msg biligo.Msg)) (
 						go coolDownLiveFetch(room)
 						log.Printf("房間 %v 開播，正在更新直播資訊...\n", room)
 						// 更新一次直播资讯
-						if latestInfo, err := GetLiveInfo(room, true); err == nil {
-							// 更新成功， 更新
-							liveInfo = latestInfo
+						if err := UpdateLiveInfo(liveInfo, room); err != nil {
+							log.Printf("更新直播資訊時出現錯誤: %v\n", err)
 						}
 					}
 
@@ -120,9 +119,46 @@ func (e *TooFastError) Error() string {
 	return fmt.Sprintf("房間 %v 請求頻繁", e.RoomId)
 }
 
-func GetLiveInfo(room int64, forceUpdate bool) (*LiveInfo, error) {
+// UpdateLiveInfo 刷新直播資訊，強制更新緩存
+func UpdateLiveInfo(info *LiveInfo, room int64) error {
 
-	info, err := api.GetRoomInfoWithOption(room, forceUpdate)
+	latestRoomInfo, err := api.GetRoomInfoWithOption(room, true)
+
+	if err != nil {
+		return err // 有錯誤，略過更新
+	}
+
+	// 房間資訊請求過快被攔截
+	if latestRoomInfo.Code == -412 {
+		return fmt.Errorf("房間 %v 請求頻繁被攔截", room)
+	}
+
+	// 更新房間資訊
+	info.Cover = latestRoomInfo.Data.UserCover
+	info.Title = latestRoomInfo.Data.Title
+	info.UID = latestRoomInfo.Data.Uid
+
+	latestUserInfo, err := api.GetUserInfo(info.UID, true)
+
+	if err != nil {
+		return err // 有錯誤，略過更新用戶資訊
+	}
+
+	// 用戶資訊請求過快被攔截
+	if latestUserInfo.Code == -412 {
+		return fmt.Errorf("用戶 %v 請求頻繁被攔截", info.UID)
+	}
+
+	// 更新用戶資訊
+	info.Name = latestUserInfo.Data.Name
+
+	return nil
+}
+
+// GetLiveInfo 獲取直播資訊，不強制更新緩存
+func GetLiveInfo(room int64) (*LiveInfo, error) {
+
+	info, err := api.GetRoomInfoWithOption(room, false)
 
 	if err != nil {
 		log.Printf("索取房間資訊 %v 時出現錯誤: %v", room, err)
@@ -142,7 +178,7 @@ func GetLiveInfo(room int64, forceUpdate bool) (*LiveInfo, error) {
 	}
 
 	data := info.Data
-	user, err := api.GetUserInfo(data.Uid, forceUpdate)
+	user, err := api.GetUserInfo(data.Uid, false)
 
 	if err != nil {
 		log.Println("索取用戶資訊時出現錯誤: ", err)
