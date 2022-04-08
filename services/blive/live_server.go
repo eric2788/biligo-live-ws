@@ -139,7 +139,7 @@ func UpdateLiveInfo(info *LiveInfo, room int64) {
 
 	latestUserInfo, err := api.GetUserInfo(info.UID, true)
 	// 用戶資訊請求過快被攔截
-	if latestUserInfo.Code == 0 {
+	if err == nil && latestUserInfo.Code == 0 {
 		// 更新用戶資訊
 		info.Name = latestUserInfo.Data.Name
 		log.Printf("房間用戶資訊 %v 刷新成功。", info.UID)
