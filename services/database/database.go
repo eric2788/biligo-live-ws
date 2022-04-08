@@ -26,8 +26,13 @@ func (e *EmptyError) Error() string {
 	return fmt.Sprintf("Key %v 為空值", e.Key)
 }
 
-func StartDB() error {
-	_, err := leveldb.OpenFile(DbPath, nil)
+func StartDB() (err error) {
+	db, err := leveldb.OpenFile(DbPath, nil)
+	defer func() {
+		if db != nil {
+			err = db.Close()
+		}
+	}()
 	return err
 }
 
