@@ -1,8 +1,7 @@
 package database
 
 import (
-	"bytes"
-	"encoding/gob"
+	"encoding/json"
 	"fmt"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/opt"
@@ -57,13 +56,12 @@ func GetFromDB(key string, arg interface{}) error {
 		log.Println("從數據庫獲取數值時出現錯誤:", err)
 		return err
 	}
+
 	// empty value
-	if err == leveldb.ErrNotFound {
+	if err == leveldb.ErrNotFound || value == nil || len(value) == 0 {
 		return &EmptyError{key}
 	}
-	buffer := bytes.NewBuffer(value)
-	dec := gob.NewDecoder(buffer)
-	err = dec.Decode(arg)
+	err = json.Unmarshal(value, arg)
 	if err != nil {
 		log.Println("從數據庫解析數值時出現錯誤:", err)
 		return err
@@ -73,15 +71,13 @@ func GetFromDB(key string, arg interface{}) error {
 
 // PutToDB use gob to encode value and save into database
 func PutToDB(key string, value interface{}) error {
-	var buffer bytes.Buffer
-	enc := gob.NewEncoder(&buffer)
-	err := enc.Encode(value)
+	b, err := json.Marshal(value)
 	if err != nil {
 		log.Println("Error encoding value:", err)
 		return err
 	}
 	return UpdateDB(func(db *leveldb.DB) error {
-		return db.Put([]byte(key), buffer.Bytes(), nil)
+		return db.Put([]byte(key), b, nil)
 	})
 }
 
