@@ -11,8 +11,17 @@ import (
 	"time"
 )
 
-var listening = set.NewSet()
-var excepted = set.NewSet()
+var (
+	listening = set.NewSet()
+	excepted  = set.NewSet()
+	liveFetch = set.NewSet()
+)
+
+func coolDownLiveFetch(room int64) {
+	liveFetch.Add(room)
+	<-time.After(time.Minute * 5)
+	liveFetch.Remove(room)
+}
 
 var Debug = true
 
@@ -55,12 +64,19 @@ func LaunchLiveServer(room int64, handle func(data *LiveInfo, msg biligo.Msg)) (
 				}
 				// 開播 !?
 				if _, ok := tp.Msg.(*biligo.MsgLive); ok {
-					log.Printf("房間 %v 開播，正在更新直播資訊...\n", room)
-					// 更新一次直播资讯
-					if latestInfo, err := GetLiveInfo(room, true); err == nil {
-						// 更新成功， 更新
-						liveInfo = latestInfo
+
+					// 更新直播資訊只做一次
+					if !liveFetch.Contains(room) {
+						go coolDownLiveFetch(room)
+						log.Printf("房間 %v 開播，正在更新直播資訊...\n", room)
+						// 更新一次直播资讯
+						if latestInfo, err := GetLiveInfo(room, true); err == nil {
+							// 更新成功， 更新
+							liveInfo = latestInfo
+						}
 					}
+
+					// 但開播指令推送多次保留
 				}
 				handle(liveInfo, tp.Msg)
 			case <-ctx.Done():
