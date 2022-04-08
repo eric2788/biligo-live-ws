@@ -32,12 +32,12 @@ func StartDB() error {
 
 func GetFromDB(key string, arg interface{}) error {
 	lock.Lock()
-	defer lock.Unlock()
 	db, err := leveldb.OpenFile(DbPath, nil)
 	defer func() {
 		if err := db.Close(); err != nil {
 			log.Println("關閉數據庫時出現錯誤:", err)
 		}
+		lock.Unlock()
 	}()
 	if err != nil {
 		log.Println("開啟數據庫時出現錯誤:", err)
@@ -78,12 +78,12 @@ func PutToDB(key string, value interface{}) error {
 
 func UpdateDB(update func(db *leveldb.DB) error) error {
 	lock.Lock()
-	defer lock.Unlock()
 	db, err := leveldb.OpenFile(DbPath, nil)
 	defer func() {
 		if err := db.Close(); err != nil {
 			log.Println("關閉數據庫時出現錯誤:", err)
 		}
+		lock.Unlock()
 	}()
 	if err != nil {
 		log.Println("開啟數據庫時出現錯誤:", err)
