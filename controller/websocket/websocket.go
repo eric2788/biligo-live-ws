@@ -8,13 +8,16 @@ import (
 	"github.com/eric2788/biligo-live-ws/services/subscriber"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
-	"log"
+	"github.com/sirupsen/logrus"
 	"net/http"
 	"sync"
 	"time"
 )
 
-var websocketTable = sync.Map{}
+var (
+	websocketTable = sync.Map{}
+	log            = logrus.WithField("controller", "websocket")
+)
 
 type WebSocket struct {
 	ws *websocket.Conn
@@ -23,6 +26,7 @@ type WebSocket struct {
 
 func Register(gp *gin.RouterGroup) {
 	gp.GET("", OpenWebSocket)
+	gp.GET("/global", OpenGlobalWebSocket)
 	go blive.SubscribedRoomTracker(handleBLiveMessage)
 }
 
@@ -51,7 +55,7 @@ func OpenWebSocket(c *gin.Context) {
 
 	// 客戶端正常關閉連接
 	ws.SetCloseHandler(func(code int, text string) error {
-		log.Printf("已關閉對 %v 的 Websocket 連接: (%v) %v", identifier, code, text)
+		log.Infof("已關閉對 %v 的 Websocket 連接: (%v) %v", identifier, code, text)
 		HandleClose(identifier)
 		return ws.WriteMessage(websocket.CloseMessage, nil)
 	})
@@ -72,7 +76,7 @@ func OpenWebSocket(c *gin.Context) {
 			// 接收客戶端關閉訊息
 			if _, _, err = ws.NextReader(); err != nil {
 				if err := ws.Close(); err != nil {
-					log.Printf("關閉用戶 %v 的 WebSocket 時發生錯誤: %v", identifier, err)
+					log.Warnf("關閉用戶 %v 的 WebSocket 時發生錯誤: %v", identifier, err)
 				}
 				return
 			}
@@ -93,7 +97,7 @@ func handleBLiveMessage(room int64, info *blive.LiveInfo, msg live.Msg) {
 	var content interface{}
 
 	if err := json.Unmarshal(raw, &content); err != nil {
-		log.Printf("序列化 原始數據內容 時出現錯誤: %v, 將轉換為 string", err)
+		log.Warnf("序列化 原始數據內容 時出現錯誤: %v, 將轉換為 string", err)
 		content = string(raw)
 	}
 
@@ -103,25 +107,27 @@ func handleBLiveMessage(room int64, info *blive.LiveInfo, msg live.Msg) {
 		Content:  content,
 	}
 
-	// if no comment will spam
-	//if _, ok := msg.(*live.MsgHeartbeatReply); !ok { // 非 heartbeat 訊息
-	//	body := string(msg.Raw())
-	//	log.Printf("從 %v 收到訊息: %v\n", room, body)
-	//}
-
+	// 訂閱用戶
 	for _, identifier := range subscriber.GetAllSubscribers(room) {
 		if err := writeMessage(identifier, bLiveData); err != nil {
-			log.Printf("向 用戶 %v 發送直播數據時出現錯誤: (%T)%v\n", identifier, err, err)
+			log.Warnf("向 用戶 %v 發送直播數據時出現錯誤: (%T)%v\n", identifier, err, err)
 		}
 	}
 
+	// 全局用戶
+	globalWebSockets.Range(func(id, conn interface{}) bool {
+		if err := writeGlobalMessage(id.(string), conn.(*WebSocket), bLiveData); err != nil {
+			log.Warnf("向 用戶 %v 發送直播數據時出現錯誤: (%T)%v\n", id, err, err)
+		}
+		return true
+	})
 }
 
 func writeMessage(identifier string, data BLiveData) error {
 	conn, ok := websocketTable.Load(identifier)
 
 	if !ok {
-		//log.Printf("用戶 %v 尚未連接到WS，略過發送。\n", identifier)
+		//log.Infof("用戶 %v 尚未連接到WS，略過發送。\n", identifier)
 		return nil
 	}
 
@@ -138,12 +144,11 @@ func writeMessage(identifier string, data BLiveData) error {
 	}
 
 	if err = con.WriteMessage(websocket.TextMessage, byteData); err != nil {
-		log.Printf("向 用戶 %v 發送直播數據時出現錯誤: (%T)%v\n", identifier, err, err)
-		log.Printf("關閉對用戶 %v 的連線。", identifier)
+		log.Warnf("向 用戶 %v 發送直播數據時出現錯誤: (%T)%v\n", identifier, err, err)
+		log.Warnf("關閉對用戶 %v 的連線。", identifier)
 		_ = con.Close()
 		// 客戶端非正常關閉連接
 		HandleClose(identifier)
-		return nil
 	}
 
 	return nil

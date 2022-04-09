@@ -5,12 +5,15 @@ import (
 	"github.com/eric2788/biligo-live-ws/services/api"
 	"github.com/eric2788/biligo-live-ws/services/subscriber"
 	"github.com/gin-gonic/gin"
-	"log"
+	"github.com/sirupsen/logrus"
 	"strconv"
 	"time"
 )
 
-var Id = subscriber.ToClientId
+var (
+	Id  = subscriber.ToClientId
+	log = logrus.WithField("controller", "subscribe")
+)
 
 func Register(gp *gin.RouterGroup) {
 	gp.GET("", GetSubscriptions)
@@ -42,7 +45,7 @@ func AddSubscribe(c *gin.Context) {
 		return
 	}
 
-	log.Printf("用戶 %v 新增訂閱 %v \n", Id(c), rooms)
+	log.Infof("用戶 %v 新增訂閱 %v \n", Id(c), rooms)
 
 	ActivateExpire(Id(c))
 
@@ -58,7 +61,7 @@ func RemoveSubscribe(c *gin.Context) {
 		return
 	}
 
-	log.Printf("用戶 %v 移除訂閱 %v \n", Id(c), rooms)
+	log.Infof("用戶 %v 移除訂閱 %v \n", Id(c), rooms)
 
 	newRooms, ok := subscriber.Remove(Id(c), rooms)
 
@@ -78,7 +81,7 @@ func Subscribe(c *gin.Context) {
 		return
 	}
 
-	log.Printf("用戶 %v 設置訂閱 %v \n", Id(c), rooms)
+	log.Infof("用戶 %v 設置訂閱 %v \n", Id(c), rooms)
 
 	ActivateExpire(Id(c))
 
@@ -105,7 +108,7 @@ func GetSubscribesArr(c *gin.Context, checkExist bool) ([]int64, bool) {
 		roomId, err := strconv.ParseInt(arr, 10, 64)
 
 		if err != nil {
-			log.Println("cannot parse room: ", err.Error())
+			log.Warn("cannot parse room: ", err.Error())
 			continue
 		}
 
@@ -114,14 +117,14 @@ func GetSubscribesArr(c *gin.Context, checkExist bool) ([]int64, bool) {
 			realRoom, roomErr := api.GetRealRoom(roomId)
 
 			if roomErr != nil {
-				log.Printf("獲取房間訊息時出現錯誤: %v", roomErr)
+				log.Warnf("獲取房間訊息時出現錯誤: %v", roomErr)
 				_ = c.Error(roomErr)
 				return nil, false
 			} else {
 				if realRoom > 0 {
 					roomSet.Add(realRoom)
 				} else {
-					log.Printf("房間 %v 無效，已略過 \n", roomId)
+					log.Warnf("房間 %v 無效，已略過 \n", roomId)
 				}
 			}
 		} else {

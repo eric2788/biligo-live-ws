@@ -4,14 +4,15 @@ import (
 	"context"
 	live "github.com/eric2788/biligo-live"
 	"github.com/eric2788/biligo-live-ws/services/subscriber"
-	"log"
+	"github.com/sirupsen/logrus"
 	"time"
 )
 
+var log = logrus.WithField("service", "blive")
 var stopMap = make(map[int64]context.CancelFunc)
 
 func SubscribedRoomTracker(handleWs func(int64, *LiveInfo, live.Msg)) {
-	log.Println("已啟動房間訂閱監聽。")
+	log.Info("已啟動房間訂閱監聽。")
 	for {
 		time.Sleep(time.Second * 5)
 
@@ -23,7 +24,7 @@ func SubscribedRoomTracker(handleWs func(int64, *LiveInfo, live.Msg)) {
 			}
 			room := toListen.(int64)
 
-			log.Println("正在啟動監聽房間: ", room)
+			log.Info("正在啟動監聽房間: ", room)
 
 			stop, err := LaunchLiveServer(room, func(data *LiveInfo, msg live.Msg) {
 				handleWs(room, data, msg)
@@ -37,7 +38,7 @@ func SubscribedRoomTracker(handleWs func(int64, *LiveInfo, live.Msg)) {
 		for toStop := range listening.Difference(rooms).Iter() {
 			room := toStop.(int64)
 
-			log.Println("正在中止監聽房間: ", room)
+			log.Info("正在中止監聽房間: ", room)
 
 			if stop, ok := stopMap[room]; ok {
 				stop()

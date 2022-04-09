@@ -3,9 +3,9 @@ package database
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/opt"
-	"log"
 	"sync"
 )
 
@@ -15,6 +15,7 @@ const (
 
 var (
 	lock = sync.Mutex{}
+	log  = logrus.WithField("service", "database")
 )
 
 type EmptyError struct {
@@ -25,11 +26,11 @@ func (e *EmptyError) Error() string {
 	return fmt.Sprintf("Key %v 為空值", e.Key)
 }
 
-func StartDB() (err error) {
+func StartDB() error {
 	db, err := leveldb.OpenFile(DbPath, nil)
 	defer func() {
 		if db != nil {
-			err = db.Close()
+			_ = db.Close()
 		}
 	}()
 	return err
@@ -43,17 +44,17 @@ func GetFromDB(key string, arg interface{}) error {
 		ReadOnly: true,
 	})
 	if err != nil {
-		log.Println("開啟數據庫時出現錯誤:", err)
+		log.Warn("開啟數據庫時出現錯誤:", err)
 		return err
 	}
 	defer func() {
 		if err := db.Close(); err != nil {
-			log.Println("關閉數據庫時出現錯誤:", err)
+			log.Debug("關閉數據庫時出現錯誤:", err)
 		}
 	}()
 	value, err := db.Get([]byte(key), nil)
 	if err != nil && err != leveldb.ErrNotFound {
-		log.Println("從數據庫獲取數值時出現錯誤:", err)
+		log.Warn("從數據庫獲取數值時出現錯誤:", err)
 		return err
 	}
 
@@ -63,7 +64,7 @@ func GetFromDB(key string, arg interface{}) error {
 	}
 	err = json.Unmarshal(value, arg)
 	if err != nil {
-		log.Println("從數據庫解析數值時出現錯誤:", err)
+		log.Warn("從數據庫解析數值時出現錯誤:", err)
 		return err
 	}
 	return nil
@@ -73,7 +74,7 @@ func GetFromDB(key string, arg interface{}) error {
 func PutToDB(key string, value interface{}) error {
 	b, err := json.Marshal(value)
 	if err != nil {
-		log.Println("Error encoding value:", err)
+		log.Warn("Error encoding value:", err)
 		return err
 	}
 	return UpdateDB(func(db *leveldb.DB) error {
@@ -86,17 +87,17 @@ func UpdateDB(update func(db *leveldb.DB) error) error {
 	defer lock.Unlock()
 	db, err := leveldb.OpenFile(DbPath, &opt.Options{NoSync: true})
 	if err != nil {
-		log.Println("開啟數據庫時出現錯誤:", err)
+		log.Warn("開啟數據庫時出現錯誤:", err)
 		return err
 	}
 	defer func() {
 		if err := db.Close(); err != nil {
-			log.Println("關閉數據庫時出現錯誤:", err)
+			log.Debug("關閉數據庫時出現錯誤:", err)
 		}
 	}()
 	err = update(db)
 	if err != nil {
-		log.Println("更新數據庫時出現錯誤: ", err)
+		log.Warn("更新數據庫時出現錯誤: ", err)
 		return err
 	}
 	return nil

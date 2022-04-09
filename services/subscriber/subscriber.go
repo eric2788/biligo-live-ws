@@ -4,13 +4,16 @@ import (
 	"fmt"
 	set "github.com/deckarep/golang-set"
 	"github.com/gin-gonic/gin"
-	"log"
+	"github.com/sirupsen/logrus"
 	"sync"
 	"time"
 )
 
-var subscribeMap = sync.Map{}
-var expireMap = sync.Map{}
+var (
+	subscribeMap = sync.Map{}
+	expireMap    = sync.Map{}
+	log          = logrus.WithField("service", "subscriber")
+)
 
 func Update(identifier string, rooms []int64) {
 	subscribeMap.Store(identifier, rooms)
@@ -37,18 +40,18 @@ func ExpireAfterWithCheck(identifier string, expired <-chan time.Time, checkExis
 				if _, ok := expireMap.LoadAndDelete(identifier); !ok {
 					return
 				}
-				log.Printf("%v 的訂閱已過期。\n", identifier)
+				log.Infof("%v 的訂閱已過期。\n", identifier)
 				subscribeMap.Delete(identifier)
 				return
 			case <-connected:
-				log.Printf("已終止用戶 %v 的訂閱過期。", identifier)
+				log.Infof("已終止用戶 %v 的訂閱過期。", identifier)
 				return
 			}
 		}
 	}()
 
 	expireMap.Store(identifier, connected)
-	log.Printf("已啟動用戶 %v 的訂閱過期。", identifier)
+	log.Infof("已啟動用戶 %v 的訂閱過期。", identifier)
 }
 
 var void struct{}

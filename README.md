@@ -64,8 +64,16 @@
 连入 WS 则需要使用
 
 ``
-wss://blive.chu77.xyz/ws?id=abc
+wss://blive.ericlamm.xyz/ws?id=abc
 ``
+
+此外，现在已新增全局的websocket接口，无需订阅和传入ID，直接传送所有正在监控的房间资料，可使用
+
+``
+wss://blive.ericlamm.xyz/ws/global
+``
+
+但将无法设置订阅。
 
 #### 步骤
 

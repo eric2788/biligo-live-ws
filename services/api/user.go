@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/eric2788/biligo-live-ws/services/database"
 	"io"
-	"log"
 	"net/http"
 )
 
@@ -21,9 +20,9 @@ func GetUserInfo(uid int64, forceUpdate bool) (*UserInfo, error) {
 			return userInfo, nil
 		} else {
 			if e, ok := err.(*database.EmptyError); ok {
-				log.Printf("%v, 正在請求B站 API", e)
+				log.Debugf("%v, 正在請求B站 API", e)
 			} else {
-				log.Printf("從數據庫獲取用戶資訊 %v 時出現錯誤: %v, 正在請求B站 API", uid, err)
+				log.Warnf("從數據庫獲取用戶資訊 %v 時出現錯誤: %v, 正在請求B站 API", uid, err)
 			}
 		}
 	}
@@ -55,9 +54,9 @@ func GetUserInfo(uid int64, forceUpdate bool) (*UserInfo, error) {
 	}
 
 	if err := database.PutToDB(dbKey, &userInfo); err != nil {
-		log.Printf("更新用戶資訊 %v 到數據庫時出現錯誤: %v", uid, err)
+		log.Warnf("更新用戶資訊 %v 到數據庫時出現錯誤: %v", uid, err)
 	} else {
-		log.Printf("更新用戶資訊 %v 到數據庫成功", uid)
+		log.Debugf("更新用戶資訊 %v 到數據庫成功", uid)
 	}
 
 	return &userInfo, nil

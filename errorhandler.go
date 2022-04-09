@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"log"
+	log "github.com/sirupsen/logrus"
 	"net/http"
 )
 
@@ -22,7 +22,7 @@ func ErrorHandler(c *gin.Context) {
 
 	if len(detectedErrors) > 0 {
 		err := detectedErrors[0].Err
-		log.Printf("Resolving Error: %T", err)
+		log.Infof("Resolving Error: %T", err)
 		log.Print(err)
 		var parsedError *appError
 		switch err.(type) {

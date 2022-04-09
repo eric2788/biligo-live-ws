@@ -8,7 +8,6 @@ import (
 	biligo "github.com/eric2788/biligo-live"
 	"github.com/eric2788/biligo-live-ws/services/api"
 	"github.com/gorilla/websocket"
-	"log"
 	"time"
 )
 
@@ -36,7 +35,7 @@ func LaunchLiveServer(room int64, handle func(data *LiveInfo, msg biligo.Msg)) (
 			// 假設為已添加監聽以防止重複監聽
 			listening.Add(room)
 			go func() {
-				log.Printf("將於十分鐘後再嘗試監聽直播: %d", room)
+				log.Warnf("將於十分鐘後再嘗試監聽直播: %d", room)
 				// 十分鐘冷卻後再重試
 				<-time.After(time.Minute * 10)
 				listening.Remove(room)
@@ -51,7 +50,7 @@ func LaunchLiveServer(room int64, handle func(data *LiveInfo, msg biligo.Msg)) (
 	})
 
 	if err := live.Conn(websocket.DefaultDialer, biligo.WsDefaultHost); err != nil {
-		log.Println("連接伺服器時出現錯誤: ", err)
+		log.Warn("連接伺服器時出現錯誤: ", err)
 		return nil, err
 	}
 
@@ -60,7 +59,7 @@ func LaunchLiveServer(room int64, handle func(data *LiveInfo, msg biligo.Msg)) (
 	go func() {
 
 		if err := live.Enter(ctx, room, "", 0); err != nil {
-			log.Printf("監聽房間 %v 時出現錯誤: %v\n", room, err)
+			log.Warnf("監聽房間 %v 時出現錯誤: %v\n", room, err)
 			listening.Remove(room)
 			stop()
 		}
@@ -72,7 +71,7 @@ func LaunchLiveServer(room int64, handle func(data *LiveInfo, msg biligo.Msg)) (
 			select {
 			case tp := <-live.Rev:
 				if tp.Error != nil {
-					log.Println(tp.Error)
+					log.Info(tp.Error)
 					continue
 				}
 				// 開播 !?
@@ -81,7 +80,7 @@ func LaunchLiveServer(room int64, handle func(data *LiveInfo, msg biligo.Msg)) (
 					// 更新直播資訊只做一次
 					if !liveFetch.Contains(room) {
 						go coolDownLiveFetch(room)
-						log.Printf("房間 %v 開播，正在更新直播資訊...\n", room)
+						log.Infof("房間 %v 開播，正在更新直播資訊...\n", room)
 						// 更新一次直播资讯
 						UpdateLiveInfo(liveInfo, room)
 					}
@@ -90,7 +89,7 @@ func LaunchLiveServer(room int64, handle func(data *LiveInfo, msg biligo.Msg)) (
 				}
 				handle(liveInfo, tp.Msg)
 			case <-ctx.Done():
-				log.Printf("房間 %v 監聽中止。\n", room)
+				log.Infof("房間 %v 監聽中止。\n", room)
 				listening.Remove(room)
 				return
 			}
@@ -128,12 +127,12 @@ func UpdateLiveInfo(info *LiveInfo, room int64) {
 		info.Cover = latestRoomInfo.Data.UserCover
 		info.Title = latestRoomInfo.Data.Title
 		info.UID = latestRoomInfo.Data.Uid
-		log.Printf("房間直播資訊 %v 刷新成功。", room)
+		log.Debugf("房間直播資訊 %v 刷新成功。", room)
 	} else {
 		if err != nil {
-			log.Printf("房間直播資訊 %v 刷新失敗: %v", room, err)
+			log.Warnf("房間直播資訊 %v 刷新失敗: %v", room, err)
 		} else {
-			log.Printf("房間直播資訊 %v 刷新失敗: %v", room, latestRoomInfo.Message)
+			log.Warnf("房間直播資訊 %v 刷新失敗: %v", room, latestRoomInfo.Message)
 		}
 	}
 
@@ -142,12 +141,12 @@ func UpdateLiveInfo(info *LiveInfo, room int64) {
 	if err == nil && latestUserInfo.Code == 0 {
 		// 更新用戶資訊
 		info.Name = latestUserInfo.Data.Name
-		log.Printf("房間用戶資訊 %v 刷新成功。", info.UID)
+		log.Debugf("房間用戶資訊 %v 刷新成功。", info.UID)
 	} else {
 		if err != nil {
-			log.Printf("房間用戶資訊 %v 刷新失敗: %v", info.UID, err)
+			log.Warnf("房間用戶資訊 %v 刷新失敗: %v", info.UID, err)
 		} else {
-			log.Printf("房間用戶資訊 %v 刷新失敗: %v", info.UID, latestUserInfo.Message)
+			log.Warnf("房間用戶資訊 %v 刷新失敗: %v", info.UID, latestUserInfo.Message)
 		}
 	}
 }
@@ -158,18 +157,18 @@ func GetLiveInfo(room int64) (*LiveInfo, error) {
 	info, err := api.GetRoomInfoWithOption(room, false)
 
 	if err != nil {
-		log.Printf("索取房間資訊 %v 時出現錯誤: %v", room, err)
+		log.Warnf("索取房間資訊 %v 時出現錯誤: %v", room, err)
 		return nil, err
 	}
 
 	// 房間資訊請求過快被攔截
 	if info.Code == -412 {
-		log.Printf("錯誤: 房間 %v 請求頻繁被攔截", room)
+		log.Warnf("錯誤: 房間 %v 請求頻繁被攔截", room)
 		return nil, &TooFastError{RoomId: room}
 	}
 
 	if info.Data == nil {
-		log.Printf("索取房間資訊 %v 時出現錯誤: %v", room, info.Message)
+		log.Warnf("索取房間資訊 %v 時出現錯誤: %v", room, info.Message)
 		excepted.Add(room)
 		return nil, errors.New(info.Message)
 	}
@@ -178,21 +177,21 @@ func GetLiveInfo(room int64) (*LiveInfo, error) {
 	user, err := api.GetUserInfo(data.Uid, false)
 
 	if err != nil {
-		log.Println("索取用戶資訊時出現錯誤: ", err)
+		log.Warn("索取用戶資訊時出現錯誤: ", err)
 		return nil, err
 	}
 
 	// 用戶資訊請求過快被攔截
 	if user.Code == -412 {
-		log.Printf("錯誤: 用戶 %v 請求頻繁被攔截", data.Uid)
+		log.Warnf("錯誤: 用戶 %v 請求頻繁被攔截", data.Uid)
 		return nil, &TooFastError{RoomId: room}
 	}
 
 	if user.Data == nil {
-		log.Println("索取用戶資訊時出現錯誤: ", user.Message)
+		log.Warn("索取用戶資訊時出現錯誤: ", user.Message)
 		// 404 not found
 		if user.Code == -404 {
-			log.Printf("用戶 %v 不存在，已排除該房間。", data.Uid)
+			log.Warnf("用戶 %v 不存在，已排除該房間。", data.Uid)
 			excepted.Add(room)
 		}
 		return nil, errors.New(user.Message)

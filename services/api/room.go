@@ -4,10 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/eric2788/biligo-live-ws/services/database"
+	"github.com/sirupsen/logrus"
 	"io"
-	"log"
 	"net/http"
 )
+
+var log = logrus.WithField("service", "api")
 
 const RoomInfoApi string = "https://api.live.bilibili.com/room/v1/Room/get_info?room_id=%v"
 
@@ -25,9 +27,9 @@ func GetRoomInfoWithOption(room int64, forceUpdate bool) (*RoomInfo, error) {
 			return roomInfo, nil
 		} else {
 			if e, ok := err.(*database.EmptyError); ok {
-				log.Printf("%v, 正在請求B站 API", e)
+				log.Debugf("%v, 正在請求B站 API", e)
 			} else {
-				log.Printf("從數據庫獲取房間資訊 %v 時出現錯誤: %v, 正在請求B站 API", room, err)
+				log.Warnf("從數據庫獲取房間資訊 %v 時出現錯誤: %v, 正在請求B站 API", room, err)
 			}
 		}
 	}
@@ -59,9 +61,9 @@ func GetRoomInfoWithOption(room int64, forceUpdate bool) (*RoomInfo, error) {
 	}
 
 	if err := database.PutToDB(dbKey, roomInfo); err != nil {
-		log.Printf("從數據庫更新房間資訊 %v 時出現錯誤: %v", room, err)
+		log.Warnf("從數據庫更新房間資訊 %v 時出現錯誤: %v", room, err)
 	} else {
-		log.Printf("成功更新房間資訊 %v 到數據庫", room)
+		log.Debugf("房間資訊 %v 更新到數據庫成功", room)
 	}
 	return &roomInfo, nil
 

@@ -2,7 +2,6 @@ package database
 
 import (
 	"fmt"
-	"log"
 	"testing"
 	"time"
 )
@@ -10,10 +9,11 @@ import (
 func TestGetFromDBConcurrent(t *testing.T) {
 
 	for i := 0; i < 10; i++ {
+		i := i
 		go func() {
 			var v interface{}
 			err := GetFromDB(fmt.Sprintf("test:%v", i), &v)
-			log.Println(err, v)
+			t.Log(err, v)
 		}()
 	}
 
@@ -23,9 +23,10 @@ func TestGetFromDBConcurrent(t *testing.T) {
 func TestPutToDBConcurrent(t *testing.T) {
 
 	for i := 0; i < 10; i++ {
+		i := i
 		go func() {
 			err := PutToDB(fmt.Sprintf("test:%v", i), i)
-			log.Println(err)
+			t.Log(err)
 		}()
 	}
 
@@ -34,17 +35,19 @@ func TestPutToDBConcurrent(t *testing.T) {
 
 func TestPutToDBAndGetFromDB(t *testing.T) {
 	for i := 0; i < 10; i++ {
+		i := i
 		go func() {
 			var v interface{}
 			err := GetFromDB(fmt.Sprintf("test:%v", i), &v)
-			log.Println(err, v)
+			t.Log(err, v)
 		}()
 	}
 
 	for i := 0; i < 10; i++ {
+		i := i
 		go func() {
 			err := PutToDB(fmt.Sprintf("test:%v", i), i)
-			log.Println(err)
+			t.Log(err)
 		}()
 	}
 
