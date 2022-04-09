@@ -16,7 +16,7 @@ func TestGetLiveInfo(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	assert.Equal(t, info.UID, 1838190318)
+	assert.Equal(t, info.UID, int64(1838190318))
 	assert.Equal(t, info.Name, "魔狼咪莉娅")
 }
 
