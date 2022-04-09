@@ -10,7 +10,10 @@ import (
 	"time"
 )
 
-const VersionTag = "0.1.9"
+const (
+	VersionTag = "0.1.9"
+	repoUrl    = "https://api.github.com/repos/eric2788/vup_monitors/releases/latest"
+)
 
 var (
 	log = logrus.WithField("service", "updater")
@@ -43,7 +46,7 @@ func StartUpdater() {
 }
 
 func checkForUpdates() (*ReleaseLatestResp, error) {
-	res, err := http.Get("https://api.github.com/repos/eric2788/vup_monitors/releases/latest")
+	res, err := http.Get(repoUrl)
 	if err != nil {
 		return nil, err
 	}

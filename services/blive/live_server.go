@@ -101,11 +101,13 @@ func LaunchLiveServer(room int64, handle func(data *LiveInfo, msg biligo.Msg)) (
 }
 
 type LiveInfo struct {
-	RoomId int64  `json:"room_id"`
-	UID    int64  `json:"uid"`
-	Title  string `json:"title"`
-	Name   string `json:"name"`
-	Cover  string `json:"cover"`
+	RoomId          int64  `json:"room_id"`
+	UID             int64  `json:"uid"`
+	Title           string `json:"title"`
+	Name            string `json:"name"`
+	Cover           string `json:"cover"`
+	UserFace        string `json:"user_face"`
+	UserDescription string `json:"user_description"`
 }
 
 type TooFastError struct {
@@ -141,6 +143,9 @@ func UpdateLiveInfo(info *LiveInfo, room int64) {
 	if err == nil && latestUserInfo.Code == 0 {
 		// 更新用戶資訊
 		info.Name = latestUserInfo.Data.Name
+		info.UserFace = latestUserInfo.Data.Face
+		info.UserDescription = latestUserInfo.Data.Sign
+
 		log.Debugf("房間用戶資訊 %v 刷新成功。", info.UID)
 	} else {
 		if err != nil {
@@ -198,11 +203,13 @@ func GetLiveInfo(room int64) (*LiveInfo, error) {
 	}
 
 	liveInfo := &LiveInfo{
-		RoomId: room,
-		UID:    data.Uid,
-		Title:  data.Title,
-		Name:   user.Data.Name,
-		Cover:  data.UserCover,
+		RoomId:          room,
+		UID:             data.Uid,
+		Title:           data.Title,
+		Name:            user.Data.Name,
+		Cover:           data.UserCover,
+		UserFace:        user.Data.Face,
+		UserDescription: user.Data.Sign,
 	}
 
 	return liveInfo, nil

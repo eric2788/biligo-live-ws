@@ -129,13 +129,15 @@ wss://blive.ericlamm.xyz/ws/global
 
 直播房间资讯
 
-| key     | 数值     | 类型     |
-|---------|--------|--------|
-| room_id | 直播房间号  | int64  |
-| uid     | 直播用户ID | int64  |
-| title   | 直播标题   | int64  |
-| name    | 直播名称   | string |
-| cover   | 直播封面网址 | string |
+| key              | 数值       | 类型     |
+|------------------|----------|--------|
+| room_id          | 直播房间号    | int64  |
+| uid              | 直播用户ID   | int64  |
+| title            | 直播标题     | int64  |
+| name             | 直播名称     | string |
+| cover            | 直播封面网址   | string |
+| user_face        | 直播用戶头像网址 | string |
+| user_description | 直播用户描述   | string |
 
 **每次开播时都会自动刷新一次直播房间资讯**
 
