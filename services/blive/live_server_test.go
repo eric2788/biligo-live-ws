@@ -9,6 +9,7 @@ import (
 )
 
 func TestGetLiveInfo(t *testing.T) {
+
 	info, err := GetLiveInfo(24643640)
 
 	if err != nil {
@@ -21,10 +22,6 @@ func TestGetLiveInfo(t *testing.T) {
 
 func TestLaunchLiveServer(t *testing.T) {
 
-	if err := database.StartDB(); err != nil {
-		t.Fatal(err)
-	}
-
 	cancel, err := LaunchLiveServer(24643640, func(data *LiveInfo, msg live.Msg) {
 		t.Log(data, msg)
 	})
@@ -36,4 +33,8 @@ func TestLaunchLiveServer(t *testing.T) {
 	<-time.After(time.Second * 15)
 	cancel()
 	<-time.After(time.Second * 3)
+}
+
+func init() {
+	_ = database.StartDB()
 }

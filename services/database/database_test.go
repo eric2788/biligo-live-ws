@@ -52,3 +52,7 @@ func TestPutToDBAndGetFromDB(t *testing.T) {
 	}
 
 }
+
+func init() {
+	_ = StartDB()
+}

@@ -1,6 +1,7 @@
 package api
 
 import (
+	"github.com/eric2788/biligo-live-ws/services/database"
 	"github.com/go-playground/assert/v2"
 	"testing"
 )
@@ -25,4 +26,8 @@ func TestGetUserInfo(t *testing.T) {
 	} else {
 		t.Fatal(err)
 	}
+}
+
+func init() {
+	_ = database.StartDB()
 }
