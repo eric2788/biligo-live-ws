@@ -16,7 +16,7 @@ type XResp struct {
 type RoomInfoData struct {
 	Uid              int64    `json:"uid"`
 	RoomId           int64    `json:"room_id"`
-	ShortId          int64    `json:"short_id"`
+	ShortId          int      `json:"short_id"`
 	Attention        int64    `json:"attention"`
 	Online           int      `json:"online"`
 	IsPortrait       bool     `json:"is_portrait"`
