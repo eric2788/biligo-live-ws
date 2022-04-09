@@ -137,7 +137,7 @@ wss://blive.ericlamm.xyz/ws/global
 | name             | 直播名称     | string |
 | cover            | 直播封面网址   | string |
 | user_face        | 直播用戶头像网址 | string |
-| user_description | 直播用户描述   | string |
+| user_description | 直播用户简介   | string |
 
 **每次开播时都会自动刷新一次直播房间资讯**
 
