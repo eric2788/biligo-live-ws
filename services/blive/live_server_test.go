@@ -2,6 +2,7 @@ package blive
 
 import (
 	live "github.com/eric2788/biligo-live"
+	"github.com/eric2788/biligo-live-ws/services/database"
 	"github.com/go-playground/assert/v2"
 	"testing"
 	"time"
@@ -19,6 +20,11 @@ func TestGetLiveInfo(t *testing.T) {
 }
 
 func TestLaunchLiveServer(t *testing.T) {
+
+	if err := database.StartDB(); err != nil {
+		t.Fatal(err)
+	}
+
 	cancel, err := LaunchLiveServer(24643640, func(data *LiveInfo, msg live.Msg) {
 		t.Log(data, msg)
 	})
