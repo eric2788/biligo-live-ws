@@ -17,6 +17,10 @@ var (
 	liveFetch = set.NewSet()
 )
 
+func GetListening() []interface{} {
+	return listening.ToSlice()
+}
+
 func coolDownLiveFetch(room int64) {
 	liveFetch.Add(room)
 	<-time.After(time.Minute * 5)

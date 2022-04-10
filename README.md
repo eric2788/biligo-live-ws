@@ -116,7 +116,7 @@ wss://blive.ericlamm.xyz/ws/global
 | /validate         | POST      | 无            | 无                | 400 如果准备未就绪                |
 | /subscribe/add    | PUT       | 要新增的批量订阅(数组) | 目前的订阅列表(数组)      | 400 如果輸入列表为空或缺少数值          |
 | /subscribe/remove | PUT       | 要删除的批量订阅(数组) | 目前的订阅列表(数组)      | 400 如果輸入列表为空或缺少数值/之前尚未递交订阅 |
-
+| /listenings       | GET       | 无            | 目前正在监控的所有房间列表    | 无                          |
 ### B站直播数据解析
 
 格式如下

@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/eric2788/biligo-live-ws/controller/listening"
 	"github.com/eric2788/biligo-live-ws/controller/subscribe"
 	ws "github.com/eric2788/biligo-live-ws/controller/websocket"
 	"github.com/eric2788/biligo-live-ws/services/blive"
@@ -20,7 +21,7 @@ func main() {
 
 	flag.Parse()
 
-	log.Infof("biligo-live-ws version %v", updater.VersionTag)
+	log.Infof("biligo-live-ws v%v", updater.VersionTag)
 
 	if *release {
 		gin.SetMode(gin.ReleaseMode)
@@ -47,6 +48,7 @@ func main() {
 
 	subscribe.Register(router.Group("subscribe"))
 	ws.Register(router.Group("ws"))
+	listening.Register(router.Group("listening"))
 
 	port := fmt.Sprintf(":%d", *port)
 
