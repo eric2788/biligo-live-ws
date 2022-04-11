@@ -17,7 +17,7 @@ func OpenGlobalWebSocket(c *gin.Context) {
 	upgrader := websocket.Upgrader{
 		CheckOrigin: func(r *http.Request) bool {
 			if os.Getenv("RESTRICT_GLOBAL") != "" {
-				return c.ClientIP() == os.Getenv("RESTRICT_GLOBAL")
+				return c.Query("token") == os.Getenv("RESTRICT_GLOBAL")
 			}
 			return true
 		},

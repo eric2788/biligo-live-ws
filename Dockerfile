@@ -14,7 +14,7 @@ COPY --from=builder /go/bin/blive /blive
 RUN chmod +x /blive
 
 ENV GIN_MODE=release
-ENV RESTRICT_GLOBAL=192.168.0.127
+ENV RESTRICT_GLOBAL=changeme
 
 EXPOSE 8080
 
