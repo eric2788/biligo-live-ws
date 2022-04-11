@@ -6,14 +6,19 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"net/http"
+	"os"
 	"sync"
 )
 
 var globalWebSockets = sync.Map{}
 
 func OpenGlobalWebSocket(c *gin.Context) {
+
 	upgrader := websocket.Upgrader{
 		CheckOrigin: func(r *http.Request) bool {
+			if os.Getenv("RESTRICT_GLOBAL") != "" {
+				return c.ClientIP() == os.Getenv("RESTRICT_GLOBAL")
+			}
 			return true
 		},
 	}

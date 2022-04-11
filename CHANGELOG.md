@@ -9,3 +9,4 @@
 - 新增定期檢查更新
 - 直播資訊新增 用戶頭像网址, 用戶简介
 - 新增 `/listening` 和 `/listening/:room_id` 接口查看監控統計
+- 新增環境參數 `RESTRICT_GLOBAL` 限制全局接口的訪問
