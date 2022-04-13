@@ -41,9 +41,12 @@ func main() {
 	router := gin.New()
 
 	router.Use(
-		gin.LoggerWithWriter(gin.DefaultWriter, "/listening/"),
+		gin.LoggerWithWriter(gin.DefaultWriter, "/listening"),
 		gin.Recovery(),
 	)
+
+	router.Use(gin.LoggerWithConfig(gin.LoggerConfig{SkipPaths: []string{"/listening"}}))
+
 	router.Use(CORS())
 	router.Use(ErrorHandler)
 
