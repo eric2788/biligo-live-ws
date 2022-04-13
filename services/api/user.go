@@ -6,6 +6,7 @@ import (
 	"github.com/eric2788/biligo-live-ws/services/database"
 	"io"
 	"net/http"
+	"strings"
 )
 
 const UserInfoApi = "https://api.bilibili.com/x/space/acc/info?mid=%v&jsonp=jsonp"
@@ -52,6 +53,8 @@ func GetUserInfo(uid int64, forceUpdate bool) (*UserInfo, error) {
 	if err := json.Unmarshal(body, &userInfo); err != nil {
 		return nil, err
 	}
+
+	userInfo.Data.Face = strings.Replace(userInfo.Data.Face, "http://", "https://", -1)
 
 	if err := database.PutToDB(dbKey, &userInfo); err != nil {
 		log.Warnf("更新用戶資訊 %v 到數據庫時出現錯誤: %v", uid, err)

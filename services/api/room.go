@@ -7,6 +7,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"io"
 	"net/http"
+	"strings"
 )
 
 var log = logrus.WithField("service", "api")
@@ -59,6 +60,8 @@ func GetRoomInfoWithOption(room int64, forceUpdate bool) (*RoomInfo, error) {
 	if err := json.Unmarshal(body, &roomInfo); err != nil {
 		return nil, err
 	}
+
+	roomInfo.Data.UserCover = strings.Replace(roomInfo.Data.UserCover, "http://", "https://", -1)
 
 	if err := database.PutToDB(dbKey, roomInfo); err != nil {
 		log.Warnf("從數據庫更新房間資訊 %v 時出現錯誤: %v", room, err)
