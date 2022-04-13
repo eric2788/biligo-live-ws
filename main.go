@@ -38,8 +38,12 @@ func main() {
 		log.Info("數據庫已成功初始化。")
 	}
 
-	router := gin.Default()
+	router := gin.New()
 
+	router.Use(
+		gin.LoggerWithWriter(gin.DefaultWriter, "/listening/"),
+		gin.Recovery(),
+	)
 	router.Use(CORS())
 	router.Use(ErrorHandler)
 
