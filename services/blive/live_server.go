@@ -160,7 +160,7 @@ func UpdateLiveInfo(info *LiveInfo, room int64) {
 func GetLiveInfo(room int64) (*LiveInfo, error) {
 
 	// 已在 exception 內, 則返回不存在
-	if excepted.Add(room) {
+	if excepted.Contains(room) {
 		return nil, ErrNotFound
 	}
 
