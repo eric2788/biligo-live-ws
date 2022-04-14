@@ -180,6 +180,7 @@ func GetLiveInfo(room int64) (*LiveInfo, error) {
 	// 未找到該房間
 	if info.Code == 1 {
 		log.Warnf("房間不存在 %v", room)
+		excepted.Add(room)
 		return nil, ErrNotFound
 	}
 
