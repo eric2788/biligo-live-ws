@@ -1,5 +1,8 @@
 name: Test Pass
 
+env:
+  artifact_name: biligo-live-ws-development
+
 on:
   pull_request:
     branches: [ master ]
