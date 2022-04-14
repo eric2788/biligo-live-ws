@@ -3,7 +3,6 @@ package blive
 import (
 	"context"
 	"errors"
-	"fmt"
 	set "github.com/deckarep/golang-set"
 	biligo "github.com/eric2788/biligo-live"
 	"github.com/eric2788/biligo-live-ws/services/api"
@@ -15,6 +14,11 @@ var (
 	listening = set.NewSet()
 	excepted  = set.NewSet()
 	liveFetch = set.NewSet()
+)
+
+var (
+	ErrNotFound = errors.New("房間不存在")
+	ErrTooFast  = errors.New("請求頻繁")
 )
 
 func GetListening() []interface{} {
@@ -35,7 +39,7 @@ func LaunchLiveServer(room int64, handle func(data *LiveInfo, msg biligo.Msg)) (
 
 	if err != nil {
 
-		if _, ok := err.(*TooFastError); ok {
+		if err == ErrTooFast {
 			// 假設為已添加監聽以防止重複監聽
 			listening.Add(room)
 			go func() {
@@ -114,14 +118,6 @@ type LiveInfo struct {
 	UserDescription string `json:"user_description"`
 }
 
-type TooFastError struct {
-	RoomId int64
-}
-
-func (e *TooFastError) Error() string {
-	return fmt.Sprintf("房間 %v 請求頻繁", e.RoomId)
-}
-
 // UpdateLiveInfo 刷新直播資訊，強制更新緩存
 func UpdateLiveInfo(info *LiveInfo, room int64) {
 
@@ -163,6 +159,11 @@ func UpdateLiveInfo(info *LiveInfo, room int64) {
 // GetLiveInfo 獲取直播資訊，不強制更新緩存
 func GetLiveInfo(room int64) (*LiveInfo, error) {
 
+	// 已在 exception 內, 則返回不存在
+	if excepted.Add(room) {
+		return nil, ErrNotFound
+	}
+
 	info, err := api.GetRoomInfoWithOption(room, false)
 
 	if err != nil {
@@ -173,7 +174,13 @@ func GetLiveInfo(room int64) (*LiveInfo, error) {
 	// 房間資訊請求過快被攔截
 	if info.Code == -412 {
 		log.Warnf("錯誤: 房間 %v 請求頻繁被攔截", room)
-		return nil, &TooFastError{RoomId: room}
+		return nil, ErrTooFast
+	}
+
+	// 未找到該房間
+	if info.Code == 1 {
+		log.Warnf("房間不存在 %v", room)
+		return nil, ErrNotFound
 	}
 
 	if info.Data == nil {
@@ -193,7 +200,12 @@ func GetLiveInfo(room int64) (*LiveInfo, error) {
 	// 用戶資訊請求過快被攔截
 	if user.Code == -412 {
 		log.Warnf("錯誤: 用戶 %v 請求頻繁被攔截", data.Uid)
-		return nil, &TooFastError{RoomId: room}
+		return nil, ErrTooFast
+	}
+
+	if user.Code == -404 {
+		log.Warnf("用戶不存在: %v", data.Uid)
+		return nil, ErrNotFound
 	}
 
 	if user.Data == nil {

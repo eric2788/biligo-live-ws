@@ -28,6 +28,14 @@ func GetListenRoom(c *gin.Context) {
 	room, err := blive.GetLiveInfo(id)
 
 	if err != nil {
+
+		if err == blive.ErrNotFound {
+			c.IndentedJSON(404, gin.H{
+				"error": "房間不存在",
+			})
+			return
+		}
+
 		log.Warnf("嘗試獲取房間 %v 的直播資訊時出現錯誤: %v", id, err)
 		c.IndentedJSON(400, gin.H{
 			"error": err.Error(),
