@@ -20,7 +20,7 @@ jobs:
     - name: Test
       run: go test -v ./...
   build_linux:
-    if: github.event_name == "push"
+    if: github.event_name == 'push'
     needs: [ test_pass ]
     runs-on: ubuntu-latest
     strategy:
@@ -46,7 +46,7 @@ jobs:
           path: 'dist'
 
   build_windows:
-    if: github.event_name == "push"
+    if: github.event_name == 'push'
     needs: [ test_pass ]
     runs-on: windows-latest
     steps:
