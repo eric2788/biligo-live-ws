@@ -11,9 +11,10 @@ import (
 )
 
 var (
-	listening = set.NewSet()
-	excepted  = set.NewSet()
-	liveFetch = set.NewSet()
+	listening          = set.NewSet()
+	shortRoomListening = set.NewSet()
+	excepted           = set.NewSet()
+	liveFetch          = set.NewSet()
 
 	ShortRoomMap = sync.Map{}
 )
@@ -66,19 +67,19 @@ func LaunchLiveServer(room int64, handle func(data *LiveInfo, msg biligo.Msg)) (
 		// 真正房間號已經在監聽
 		if listening.Contains(realRoom) {
 			log.Infof("檢測到 %v 為短號，真正房間號為 %v 且正在監聽中。", room, realRoom)
-			listening.Add(room)
+			shortRoomListening.Add(room)
 			return nil, errors.New("此房間已經在監聽")
 		}
 
 	}
 
 	removeListen := func() {
-		listening.Remove(room)
+		listening.Remove(realRoom)
 		if room != realRoom {
-			listening.Remove(realRoom)
+			shortRoomListening.Remove(room)
 		}
 		if shortRoom, ok := ShortRoomMap.Load(realRoom); ok {
-			listening.Remove(shortRoom)
+			shortRoomListening.Remove(shortRoom)
 		}
 	}
 
@@ -133,10 +134,10 @@ func LaunchLiveServer(room int64, handle func(data *LiveInfo, msg biligo.Msg)) (
 		}
 	}()
 
-	listening.Add(room)
+	listening.Add(realRoom)
 	if room != realRoom {
 		log.Infof("%v 為短號，已新增真正的房間號 %v => %v 作為監聽。", room, room, realRoom)
-		listening.Add(realRoom)
+		shortRoomListening.Add(room)
 	}
 	return stop, nil
 }

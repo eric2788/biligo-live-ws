@@ -22,6 +22,10 @@ func SubscribedRoomTracker(handleWs func(int64, *LiveInfo, live.Msg)) {
 			if excepted.Contains(toListen) {
 				continue
 			}
+			// 已經啟動監聽的短號
+			if shortRoomListening.Contains(toListen) {
+				continue
+			}
 			room := toListen.(int64)
 
 			log.Info("正在啟動監聽房間: ", room)
@@ -33,6 +37,10 @@ func SubscribedRoomTracker(handleWs func(int64, *LiveInfo, live.Msg)) {
 			if err == nil {
 				stopMap[room] = stop
 			}
+		}
+
+		for short := range shortRoomListening.Iter() {
+			rooms.Add(short)
 		}
 
 		for toStop := range listening.Difference(rooms).Iter() {
