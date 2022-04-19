@@ -38,9 +38,10 @@ func SubscribedRoomTracker(handleWs func(int64, *LiveInfo, live.Msg)) {
 		for toStop := range listening.Difference(rooms).Iter() {
 			room := toStop.(int64)
 
-			log.Info("正在中止監聽房間: ", room)
-
 			if stop, ok := stopMap[room]; ok {
+
+				log.Info("正在中止監聽房間: ", room)
+
 				stop()
 				delete(stopMap, room)
 			}
