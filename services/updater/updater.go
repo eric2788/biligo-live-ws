@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	VersionTag = "0.1.9"
+	VersionTag = "0.1.10"
 	repoUrl    = "https://api.github.com/repos/eric2788/vup_monitors/releases/latest"
 )
 

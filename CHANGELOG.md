@@ -3,10 +3,6 @@
 
 更新記錄：
 
-- 更好的程序測試
-- 新增全局接口(無需訂閱)
-- 更好的 logging
-- 新增定期檢查更新
-- 直播資訊新增 用戶頭像网址, 用戶简介
-- 新增 `/listening` 和 `/listening/:room_id` 接口查看監控統計
-- 新增環境參數 `RESTRICT_GLOBAL` 限制全局接口的訪問
+- 短號監聽會自動接駁到真正的房間號
+- `/listening/:room_id` 資訊新增 `official_role` 判定主播類型
+- 透過 `NO_LISTENING_LOG` 的環境參數禁用 `/listening/*` 的記錄防止洗屏

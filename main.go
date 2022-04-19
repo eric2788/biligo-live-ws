@@ -12,6 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
 	"os"
+	"strings"
 )
 
 var release = flag.Bool("release", os.Getenv("GIN_MODE") == "release", "set release mode")
@@ -40,12 +41,15 @@ func main() {
 
 	router := gin.New()
 
-	router.Use(
-		gin.LoggerWithWriter(gin.DefaultWriter, "/listening"),
-		gin.Recovery(),
-	)
-
-	router.Use(gin.LoggerWithConfig(gin.LoggerConfig{SkipPaths: []string{"/listening"}}))
+	if os.Getenv("NO_LISTENING_LOG") == "true" {
+		router.Use(func(c *gin.Context) {
+			if strings.HasPrefix(c.Request.URL.Path, "/listening") {
+				c.Next()
+				return
+			}
+			gin.Logger()(c)
+		})
+	}
 
 	router.Use(CORS())
 	router.Use(ErrorHandler)

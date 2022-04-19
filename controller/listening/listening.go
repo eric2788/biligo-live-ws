@@ -25,7 +25,7 @@ func GetListenRoom(c *gin.Context) {
 		return
 	}
 
-	room, err := blive.GetLiveInfo(id)
+	room, err := blive.GetListeningInfo(id)
 
 	if err != nil {
 

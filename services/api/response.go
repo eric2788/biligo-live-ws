@@ -92,11 +92,17 @@ type UserInfo struct {
 }
 
 type UserInfoData struct {
-	Mid   int64  `json:"mid"`
-	Name  string `json:"name"`
-	Sex   string `json:"sex"`
-	Face  string `json:"face"`
-	Sign  string `json:"sign"`
-	Rank  int    `json:"rank"`
-	Level int8   `json:"level"`
+	Mid      int64  `json:"mid"`
+	Name     string `json:"name"`
+	Sex      string `json:"sex"`
+	Face     string `json:"face"`
+	Sign     string `json:"sign"`
+	Rank     int    `json:"rank"`
+	Level    int8   `json:"level"`
+	Official struct {
+		Role  int    `json:"role"`
+		Desc  string `json:"desc"`
+		Title string `json:"title"`
+		Type  int    `json:"type"`
+	} `json:"official"`
 }

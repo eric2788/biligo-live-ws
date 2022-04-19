@@ -114,6 +114,17 @@ func handleBLiveMessage(room int64, info *blive.LiveInfo, msg live.Msg) {
 		}
 	}
 
+	// 短號用戶
+	if shortRoomId, ok := blive.ShortRoomMap.Load(room); ok {
+
+		for _, identifier := range subscriber.GetAllSubscribers(shortRoomId.(int64)) {
+			if err := writeMessage(identifier, bLiveData); err != nil {
+				log.Warnf("向 用戶 %v 發送直播數據時出現錯誤: (%T)%v\n", identifier, err, err)
+			}
+		}
+
+	}
+
 	// 全局用戶
 	globalWebSockets.Range(func(id, conn interface{}) bool {
 		if err := writeGlobalMessage(id.(string), conn.(*WebSocket), bLiveData); err != nil {

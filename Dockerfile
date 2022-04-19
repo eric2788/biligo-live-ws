@@ -15,6 +15,7 @@ RUN chmod +x /blive
 
 ENV GIN_MODE=release
 ENV RESTRICT_GLOBAL=changeme
+ENV NO_LISTENING_LOG=true
 
 EXPOSE 8080
 
