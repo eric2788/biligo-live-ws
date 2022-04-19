@@ -66,8 +66,8 @@ func LaunchLiveServer(room int64, handle func(data *LiveInfo, msg biligo.Msg)) (
 		// 真正房間號已經在監聽
 		if listening.Contains(realRoom) {
 			log.Infof("檢測到 %v 為短號，真正房間號為 %v 且正在監聽中。", room, realRoom)
-			listening.Add(room)
-			return nil, nil
+			excepted.Add(room)
+			return nil, errors.New("此房間已經在監聽")
 		}
 
 	}
@@ -123,6 +123,10 @@ func LaunchLiveServer(room int64, handle func(data *LiveInfo, msg biligo.Msg)) (
 		}
 	}()
 
-	listening.Add(realRoom)
+	listening.Add(room)
+	if room != realRoom {
+		log.Infof("%v 為短號，已新增真正的房間號 %v => %v 作為監聽。", room, room, realRoom)
+		listening.Add(realRoom)
+	}
 	return stop, nil
 }
