@@ -12,7 +12,7 @@ import (
 
 const (
 	VersionTag = "0.1.10"
-	repoUrl    = "https://api.github.com/repos/eric2788/vup_monitors/releases/latest"
+	repoUrl    = "https://api.github.com/repos/eric2788/biligo-live-ws/releases/latest"
 )
 
 var (
