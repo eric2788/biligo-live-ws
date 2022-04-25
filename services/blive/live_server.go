@@ -40,11 +40,6 @@ var Debug = true
 
 func LaunchLiveServer(room int64, handle func(data *LiveInfo, msg biligo.Msg)) (context.CancelFunc, error) {
 
-	// 冷卻時暫不監聽直播
-	if coolingDown.Contains(room) {
-		return nil, ErrTooFast
-	}
-
 	liveInfo, err := GetLiveInfo(room) // 獲取直播資訊
 
 	if err != nil {

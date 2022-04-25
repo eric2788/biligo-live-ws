@@ -19,6 +19,7 @@ func SubscribedRoomTracker(handleWs func(int64, *LiveInfo, live.Msg)) {
 		rooms := subscriber.GetAllRooms()
 
 		for toListen := range rooms.Difference(listening).Iter() {
+
 			if excepted.Contains(toListen) {
 				continue
 			}
@@ -26,6 +27,12 @@ func SubscribedRoomTracker(handleWs func(int64, *LiveInfo, live.Msg)) {
 			if shortRoomListening.Contains(toListen) {
 				continue
 			}
+
+			// 冷卻時暫不監聽直播
+			if coolingDown.Contains(toListen) {
+				continue
+			}
+
 			room := toListen.(int64)
 
 			log.Info("正在啟動監聽房間: ", room)
