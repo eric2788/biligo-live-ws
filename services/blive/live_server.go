@@ -15,6 +15,7 @@ var (
 	shortRoomListening = set.NewSet()
 	excepted           = set.NewSet()
 	liveFetch          = set.NewSet()
+	coolingDown        = set.NewSet()
 
 	ShortRoomMap = sync.Map{}
 )
@@ -38,18 +39,23 @@ var Debug = true
 
 func LaunchLiveServer(room int64, handle func(data *LiveInfo, msg biligo.Msg)) (context.CancelFunc, error) {
 
+	// 冷卻時暫不監聽直播
+	if coolingDown.Contains(room) {
+		return nil, ErrTooFast
+	}
+
 	liveInfo, err := GetLiveInfo(room) // 獲取直播資訊
 
 	if err != nil {
 
 		if err == ErrTooFast {
 			// 假設為已添加監聽以防止重複監聽
-			listening.Add(room)
+			coolingDown.Add(room)
 			go func() {
 				log.Warnf("將於十分鐘後再嘗試監聽直播: %d", room)
 				// 十分鐘冷卻後再重試
 				<-time.After(time.Minute * 10)
-				listening.Remove(room)
+				coolingDown.Remove(room)
 			}()
 		}
 
