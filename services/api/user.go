@@ -2,8 +2,8 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
-	"github.com/eric2788/biligo-live-ws/services/blive"
 	"github.com/eric2788/biligo-live-ws/services/database"
 	"io"
 	"net/http"
@@ -11,6 +11,10 @@ import (
 )
 
 const UserInfoApi = "https://api.bilibili.com/x/space/acc/info?mid=%v&jsonp=jsonp"
+
+var (
+	ErrCacheNotFound = errors.New("緩存不存在")
+)
 
 func GetUserInfoCache(uid int64) (*UserInfo, error) {
 
@@ -21,7 +25,7 @@ func GetUserInfoCache(uid int64) (*UserInfo, error) {
 		return userInfo, nil
 	} else {
 		if _, ok := err.(*database.EmptyError); ok {
-			return nil, blive.ErrCacheNotFound
+			return nil, ErrCacheNotFound
 		} else {
 			return nil, err
 		}

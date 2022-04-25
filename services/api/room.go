@@ -3,7 +3,6 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/eric2788/biligo-live-ws/services/blive"
 	"github.com/eric2788/biligo-live-ws/services/database"
 	"github.com/sirupsen/logrus"
 	"io"
@@ -28,7 +27,7 @@ func GetRoomInfoCache(room int64) (*RoomInfo, error) {
 		return roomInfo, nil
 	} else {
 		if _, ok := err.(*database.EmptyError); ok {
-			return nil, blive.ErrCacheNotFound
+			return nil, ErrCacheNotFound
 		} else {
 			return nil, err
 		}
