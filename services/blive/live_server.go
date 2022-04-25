@@ -52,9 +52,10 @@ func LaunchLiveServer(room int64, handle func(data *LiveInfo, msg biligo.Msg)) (
 			// 假設為已添加監聽以防止重複監聽
 			coolingDown.Add(room)
 			go func() {
-				log.Warnf("將於十分鐘後再嘗試監聽直播: %d", room)
+				cool := 10 + len(coolingDown.ToSlice())
+				log.Warnf("將於 %v 分鐘後再嘗試監聽直播: %d", cool, room)
 				// 十分鐘冷卻後再重試
-				<-time.After(time.Minute * 10)
+				<-time.After(time.Minute * time.Duration(cool))
 				coolingDown.Remove(room)
 			}()
 		}
