@@ -43,8 +43,8 @@ func GetRoomInfoWithOption(room int64, forceUpdate bool) (*RoomInfo, error) {
 		if roomInfo, err := GetRoomInfoCache(room); err == nil {
 			return roomInfo, nil
 		} else {
-			if e, ok := err.(*database.EmptyError); ok {
-				log.Debugf("%v, 正在請求B站 API", e)
+			if err == ErrCacheNotFound {
+				log.Debugf("%v, 正在請求B站 API", err)
 			} else {
 				log.Warnf("從數據庫獲取房間資訊 %v 時出現錯誤: %v, 正在請求B站 API", room, err)
 			}

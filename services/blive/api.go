@@ -69,62 +69,20 @@ func UpdateLiveInfo(info *LiveInfo, room int64) {
 	}
 }
 
+// GetLiveInfoCache 從緩存提取，不存在則返回 ErrCacheNotFound
 func GetLiveInfoCache(room int64) (*LiveInfo, error) {
-
-	// 已在 exception 內, 則返回不存在
-	if excepted.Contains(room) {
-		return nil, ErrNotFound
-	}
 
 	info, err := api.GetRoomInfoCache(room)
 
 	if err != nil {
-		log.Warnf("索取房間資訊 %v 時出現錯誤: %v", room, err)
 		return nil, err
-	}
-
-	// 房間資訊請求過快被攔截
-	if info.Code == -412 {
-		log.Warnf("錯誤: 房間 %v 請求頻繁被攔截", room)
-		return nil, ErrTooFast
-	}
-
-	// 未找到該房間
-	if info.Code == 1 {
-		log.Warnf("房間不存在 %v", room)
-		excepted.Add(room)
-		return nil, ErrNotFound
-	}
-
-	if info.Data == nil {
-		log.Warnf("索取房間資訊 %v 時出現錯誤: %v", room, info.Message)
-		excepted.Add(room)
-		return nil, errors.New(info.Message)
 	}
 
 	data := info.Data
 	user, err := api.GetUserInfoCache(data.Uid)
 
 	if err != nil {
-		log.Warn("索取用戶資訊時出現錯誤: ", err)
 		return nil, err
-	}
-
-	// 用戶資訊請求過快被攔截
-	if user.Code == -412 {
-		log.Warnf("錯誤: 用戶 %v 請求頻繁被攔截", data.Uid)
-		return nil, ErrTooFast
-	}
-
-	if user.Data == nil {
-		log.Warn("索取用戶資訊時出現錯誤: ", user.Message)
-		// 404 not found
-		if user.Code == -404 {
-			log.Warnf("用戶 %v 不存在，已排除該房間。", data.Uid)
-			excepted.Add(room)
-			return nil, ErrNotFound
-		}
-		return nil, errors.New(user.Message)
 	}
 
 	liveInfo := &LiveInfo{
