@@ -6,6 +6,7 @@ import (
 	set "github.com/deckarep/golang-set"
 	biligo "github.com/eric2788/biligo-live"
 	"github.com/gorilla/websocket"
+	"strings"
 	"sync"
 	"time"
 )
@@ -52,10 +53,10 @@ func LaunchLiveServer(room int64, handle func(data *LiveInfo, msg biligo.Msg)) (
 			// 假設為已添加監聽以防止重複監聽
 			coolingDown.Add(room)
 			go func() {
-				cool := 10 + len(coolingDown.ToSlice())
-				log.Warnf("將於 %v 分鐘後再嘗試監聽直播: %d", cool, room)
+				cool := time.Minute*10 + time.Second*time.Duration(len(coolingDown.ToSlice()))
+				log.Warnf("將於 %v 後再嘗試監聽直播: %d", shortDur(cool), room)
 				// 十分鐘冷卻後再重試
-				<-time.After(time.Minute * time.Duration(cool))
+				<-time.After(cool)
 				coolingDown.Remove(room)
 			}()
 		}
@@ -147,4 +148,15 @@ func LaunchLiveServer(room int64, handle func(data *LiveInfo, msg biligo.Msg)) (
 		shortRoomListening.Add(room)
 	}
 	return stop, nil
+}
+
+func shortDur(d time.Duration) string {
+	s := d.String()
+	if strings.HasSuffix(s, "m0s") {
+		s = s[:len(s)-2]
+	}
+	if strings.HasSuffix(s, "h0m") {
+		s = s[:len(s)-2]
+	}
+	return s
 }
