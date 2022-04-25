@@ -6,6 +6,11 @@ import (
 )
 
 func GetListeningInfo(room int64) (*ListeningInfo, error) {
+
+	if coolingDown.Contains(room) {
+		return nil, ErrTooFast
+	}
+
 	liveInfo, err := GetLiveInfo(room)
 	if err != nil {
 		return nil, err

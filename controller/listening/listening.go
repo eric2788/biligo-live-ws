@@ -34,9 +34,13 @@ func GetListenRoom(c *gin.Context) {
 				"error": "房間不存在",
 			})
 			return
+		} else if err == blive.ErrTooFast {
+			c.IndentedJSON(412, gin.H{
+				"error": "請求頻繁，稍後再嘗試",
+			})
 		}
 
-		log.Warnf("嘗試獲取房間 %v 的直播資訊時出現錯誤: %v", id, err)
+		log.Warnf("嘗試獲取房間 %v 的直播資訊時出現錯誤: %v (%v)", id, err, c.ClientIP())
 		c.IndentedJSON(400, gin.H{
 			"error": err.Error(),
 		})
