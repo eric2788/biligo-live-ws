@@ -11,13 +11,24 @@ import (
 
 const UserInfoApi = "https://api.bilibili.com/x/space/acc/info?mid=%v&jsonp=jsonp"
 
+func GetUserInfoCache(uid int64) (*UserInfo, error) {
+
+	dbKey := fmt.Sprintf("user:%v", uid)
+
+	var userInfo = &UserInfo{}
+	if err := database.GetFromDB(dbKey, userInfo); err == nil {
+		return userInfo, nil
+	} else {
+		return nil, err
+	}
+}
+
 func GetUserInfo(uid int64, forceUpdate bool) (*UserInfo, error) {
 
 	dbKey := fmt.Sprintf("user:%v", uid)
 
 	if !forceUpdate {
-		var userInfo = &UserInfo{}
-		if err := database.GetFromDB(dbKey, userInfo); err == nil {
+		if userInfo, err := GetUserInfoCache(uid); err == nil {
 			return userInfo, nil
 		} else {
 			if e, ok := err.(*database.EmptyError); ok {

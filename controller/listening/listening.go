@@ -40,6 +40,7 @@ func GetListenRoom(c *gin.Context) {
 			c.IndentedJSON(412, gin.H{
 				"error": "請求頻繁，稍後再嘗試",
 			})
+			return
 		}
 
 		log.Warnf("嘗試獲取房間 %v 的直播資訊時出現錯誤: %v (%v)", id, err, c.ClientIP())

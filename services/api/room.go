@@ -18,13 +18,25 @@ func GetRoomInfo(room int64) (*RoomInfo, error) {
 	return GetRoomInfoWithOption(room, false)
 }
 
+func GetRoomInfoCache(room int64) (*RoomInfo, error) {
+
+	dbKey := fmt.Sprintf("room:%v", room)
+
+	var roomInfo = &RoomInfo{}
+	if err := database.GetFromDB(dbKey, roomInfo); err == nil {
+		return roomInfo, nil
+	} else {
+		return nil, err
+	}
+
+}
+
 func GetRoomInfoWithOption(room int64, forceUpdate bool) (*RoomInfo, error) {
 
 	dbKey := fmt.Sprintf("room:%v", room)
 
 	if !forceUpdate {
-		var roomInfo = &RoomInfo{}
-		if err := database.GetFromDB(dbKey, roomInfo); err == nil {
+		if roomInfo, err := GetRoomInfoCache(room); err == nil {
 			return roomInfo, nil
 		} else {
 			if e, ok := err.(*database.EmptyError); ok {
