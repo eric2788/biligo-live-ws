@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/eric2788/biligo-live-ws/services/blive"
 	"github.com/eric2788/biligo-live-ws/services/database"
 	"io"
 	"net/http"
@@ -19,7 +20,11 @@ func GetUserInfoCache(uid int64) (*UserInfo, error) {
 	if err := database.GetFromDB(dbKey, userInfo); err == nil {
 		return userInfo, nil
 	} else {
-		return nil, err
+		if _, ok := err.(*database.EmptyError); ok {
+			return nil, blive.ErrCacheNotFound
+		} else {
+			return nil, err
+		}
 	}
 }
 

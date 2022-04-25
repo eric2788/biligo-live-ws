@@ -30,15 +30,9 @@ func GetListenRoom(c *gin.Context) {
 	if err != nil {
 
 		if err == blive.ErrNotFound {
-			log.Infof("用戶索取 %v 房間資訊時不存在 (%v)", room, c.ClientIP())
+			log.Infof("用戶索取 %v 房間資訊時不存在 (%v)", id, c.ClientIP())
 			c.IndentedJSON(404, gin.H{
 				"error": "房間不存在",
-			})
-			return
-		} else if err == blive.ErrTooFast {
-			log.Infof("用戶索取 %v 房間資訊時請求頻繁 (%v)", room, c.ClientIP())
-			c.IndentedJSON(412, gin.H{
-				"error": "請求頻繁，稍後再嘗試",
 			})
 			return
 		}

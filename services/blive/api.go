@@ -3,16 +3,11 @@ package blive
 import (
 	"errors"
 	"github.com/eric2788/biligo-live-ws/services/api"
-	"time"
 )
 
 func GetListeningInfo(room int64) (*ListeningInfo, error) {
 
-	if coolingDown.Contains(room) {
-		return nil, ErrTooFast
-	}
-
-	liveInfo, err := GetLiveInfo(room)
+	liveInfo, err := GetLiveInfoCache(room)
 	if err != nil {
 		return nil, err
 	}
@@ -148,10 +143,6 @@ func GetLiveInfoCache(room int64) (*LiveInfo, error) {
 // GetLiveInfo 獲取直播資訊，不強制更新緩存
 func GetLiveInfo(room int64) (*LiveInfo, error) {
 
-	if coolingDown.Contains(room) {
-		return nil, ErrTooFast
-	}
-
 	// 已在 exception 內, 則返回不存在
 	if excepted.Contains(room) {
 		return nil, ErrNotFound
@@ -167,12 +158,6 @@ func GetLiveInfo(room int64) (*LiveInfo, error) {
 	// 房間資訊請求過快被攔截
 	if info.Code == -412 {
 		log.Warnf("錯誤: 房間 %v 請求頻繁被攔截", room)
-		log.Warnf("十分鐘後再允許請求此房間 %v", room)
-		coolingDown.Add(room)
-		go func() {
-			<-time.After(time.Minute * 10)
-			coolingDown.Remove(room)
-		}()
 		return nil, ErrTooFast
 	}
 
@@ -200,12 +185,6 @@ func GetLiveInfo(room int64) (*LiveInfo, error) {
 	// 用戶資訊請求過快被攔截
 	if user.Code == -412 {
 		log.Warnf("錯誤: 用戶 %v 請求頻繁被攔截", data.Uid)
-		log.Warnf("十分鐘後再允許請求此房間 %v", room)
-		coolingDown.Add(room)
-		go func() {
-			<-time.After(time.Minute * 10)
-			coolingDown.Remove(room)
-		}()
 		return nil, ErrTooFast
 	}
 

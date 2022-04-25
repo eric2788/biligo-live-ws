@@ -21,8 +21,9 @@ var (
 )
 
 var (
-	ErrNotFound = errors.New("房間不存在")
-	ErrTooFast  = errors.New("請求頻繁")
+	ErrNotFound      = errors.New("房間不存在")
+	ErrTooFast       = errors.New("請求頻繁")
+	ErrCacheNotFound = errors.New("緩存不存在")
 )
 
 func GetListening() []interface{} {
