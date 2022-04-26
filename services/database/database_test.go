@@ -2,6 +2,7 @@ package database
 
 import (
 	"fmt"
+	"sync"
 	"testing"
 	"time"
 )
@@ -20,13 +21,29 @@ func TestGetFromDBConcurrent(t *testing.T) {
 	<-time.After(time.Second * 5)
 }
 
+func BenchmarkPutToDB(b *testing.B) {
+	/*b.Log("PutToDB")
+	for i := 0; i < b.N; i++ {
+		PutToDB(fmt.Sprintf("test:%v", i), i)
+	}
+	*/
+	b.Log("GetFromDB")
+	for i := 0; i < 10; i++ {
+		var j int
+		GetFromDB(fmt.Sprintf("test:%v", 4000), &j)
+	}
+
+}
+
 func TestPutToDBConcurrent(t *testing.T) {
 
 	for i := 0; i < 10; i++ {
 		i := i
 		go func() {
 			err := PutToDB(fmt.Sprintf("test:%v", i), i)
-			t.Log(err)
+			if err != nil {
+				t.Log(err)
+			}
 		}()
 	}
 
@@ -34,25 +51,41 @@ func TestPutToDBConcurrent(t *testing.T) {
 }
 
 func TestPutToDBAndGetFromDB(t *testing.T) {
-	for i := 0; i < 10; i++ {
+
+	count := 300
+
+	wg := sync.WaitGroup{}
+
+	wg.Add(count * 2)
+
+	for i := 0; i < count; i++ {
 		i := i
 		go func() {
 			var v interface{}
 			err := GetFromDB(fmt.Sprintf("test:%v", i), &v)
-			t.Log(err, v)
+			if err != nil {
+				t.Logf("GetFromDB-%v Error: %v", i, err)
+			}
+			wg.Done()
 		}()
 	}
 
-	for i := 0; i < 10; i++ {
+	for i := 0; i < count; i++ {
 		i := i
 		go func() {
 			err := PutToDB(fmt.Sprintf("test:%v", i), i)
-			t.Log(err)
+			if err != nil {
+				t.Logf("PutToDB-%v Error: %v", i, err)
+			}
+			wg.Done()
 		}()
 	}
+
+	wg.Wait()
 
 }
 
 func init() {
+	//logrus.SetLevel(logrus.DebugLevel)
 	_ = StartDB()
 }

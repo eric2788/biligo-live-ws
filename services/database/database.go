@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"github.com/sirupsen/logrus"
 	"github.com/syndtr/goleveldb/leveldb"
-	"github.com/syndtr/goleveldb/leveldb/opt"
-	"sync"
 )
 
 const (
@@ -14,8 +12,8 @@ const (
 )
 
 var (
-	lock = sync.Mutex{}
-	log  = logrus.WithField("service", "database")
+	log   = logrus.WithField("service", "database")
+	level *leveldb.DB
 )
 
 type EmptyError struct {
@@ -28,41 +26,38 @@ func (e *EmptyError) Error() string {
 
 func StartDB() error {
 	db, err := leveldb.OpenFile(DbPath, nil)
-	defer func() {
-		if db != nil {
-			_ = db.Close()
-		}
-	}()
-	return err
+	if err != nil {
+		return err
+	}
+	level = db
+	return nil
+}
+
+func CloseDB() error {
+	return level.Close()
+}
+
+func closeTransWithLog(tran *leveldb.Transaction) {
+	if err := tran.Commit(); err != nil {
+		log.Debug("提交事務時出現錯誤:", err)
+	}
 }
 
 func GetFromDB(key string, arg interface{}) error {
-	//lock.Lock()
-	//defer lock.Unlock()
-	db, err := leveldb.OpenFile(DbPath, &opt.Options{
-		NoSync:   true,
-		ReadOnly: true,
-	})
+	transaction, err := level.OpenTransaction()
 	if err != nil {
-		log.Warn("開啟數據庫時出現錯誤:", err)
+		log.Warn("開啟 transaction 時出現錯誤:", err)
 		return err
 	}
-	defer func() {
-		if err := db.Close(); err != nil {
-			log.Debug("關閉數據庫時出現錯誤:", err)
-		}
-	}()
 
-	log.Debugf("開始讀取數據庫: %v", key)
+	defer closeTransWithLog(transaction)
 
-	value, err := db.Get([]byte(key), nil)
+	value, err := transaction.Get([]byte(key), nil)
 
 	if err != nil && err != leveldb.ErrNotFound {
 		log.Warn("從數據庫獲取數值時出現錯誤:", err)
 		return err
 	}
-
-	log.Debugf("讀取數據庫完成: %v", key)
 
 	// empty value
 	if err == leveldb.ErrNotFound || value == nil || len(value) == 0 {
@@ -76,31 +71,35 @@ func GetFromDB(key string, arg interface{}) error {
 	return nil
 }
 
-// PutToDB use gob to encode value and save into database
+// PutToDB use json to encode value and save into database
 func PutToDB(key string, value interface{}) error {
 	b, err := json.Marshal(value)
 	if err != nil {
 		log.Warn("Error encoding value:", err)
 		return err
 	}
-	return UpdateDB(func(db *leveldb.DB) error {
-		return db.Put([]byte(key), b, nil)
-	})
-}
 
-func UpdateDB(update func(db *leveldb.DB) error) error {
-	lock.Lock()
-	defer lock.Unlock()
-	db, err := leveldb.OpenFile(DbPath, &opt.Options{NoSync: true})
+	trans, err := level.OpenTransaction()
+
 	if err != nil {
-		log.Warn("開啟數據庫時出現錯誤:", err)
+		log.Warn("開啟 transaction 時出現錯誤:", err)
 		return err
 	}
-	defer func() {
-		if err := db.Close(); err != nil {
-			log.Debug("關閉數據庫時出現錯誤:", err)
-		}
-	}()
+
+	defer closeTransWithLog(trans)
+
+	return trans.Put([]byte(key), b, nil)
+}
+
+func UpdateDB(update func(db *leveldb.Transaction) error) error {
+	db, err := level.OpenTransaction()
+	if err != nil {
+		log.Warn("開啟 transaction 時出現錯誤:", err)
+		return err
+	}
+
+	defer closeTransWithLog(db)
+
 	err = update(db)
 	if err != nil {
 		log.Warn("更新數據庫時出現錯誤: ", err)

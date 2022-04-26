@@ -70,6 +70,9 @@ func main() {
 		log.Fatal(err)
 	}
 
+	if err := database.CloseDB(); err != nil {
+		log.Errorf("關閉數據庫時錯誤: %v", err)
+	}
 }
 
 func Index(c *gin.Context) {
