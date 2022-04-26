@@ -1,6 +1,7 @@
 package blive
 
 import (
+	"context"
 	live "github.com/eric2788/biligo-live"
 	"github.com/eric2788/biligo-live-ws/services/database"
 	"github.com/go-playground/assert/v2"
@@ -22,14 +23,16 @@ func TestGetLiveInfo(t *testing.T) {
 
 func TestLaunchLiveServer(t *testing.T) {
 
-	cancel, err := LaunchLiveServer(24643640, func(data *LiveInfo, msg live.Msg) {
+	var cancel context.CancelFunc
+	LaunchLiveServer(24643640, func(data *LiveInfo, msg live.Msg) {
 		t.Log(data, msg)
+	}, func(cancelFunc context.CancelFunc) {
+		cancel = cancelFunc
 	})
 
-	if err != nil {
-		t.Fatal(err)
+	if cancel == nil {
+		t.Fatal("cancel is nil")
 	}
-
 	<-time.After(time.Second * 15)
 	cancel()
 	<-time.After(time.Second * 3)

@@ -5,11 +5,12 @@ import (
 	live "github.com/eric2788/biligo-live"
 	"github.com/eric2788/biligo-live-ws/services/subscriber"
 	"github.com/sirupsen/logrus"
+	"sync"
 	"time"
 )
 
 var log = logrus.WithField("service", "blive")
-var stopMap = make(map[int64]context.CancelFunc)
+var stopMap = sync.Map{}
 
 func SubscribedRoomTracker(handleWs func(int64, *LiveInfo, live.Msg)) {
 	log.Info("已啟動房間訂閱監聽。")
@@ -18,18 +19,24 @@ func SubscribedRoomTracker(handleWs func(int64, *LiveInfo, live.Msg)) {
 
 		rooms := subscriber.GetAllRooms()
 
+		log.Debug("房間訂閱: ", rooms.ToSlice())
+		log.Debug("正在監聽: ", listening.ToSlice())
+
 		for toListen := range rooms.Difference(listening).Iter() {
 
 			if excepted.Contains(toListen) {
+				log.Debugf("房間 %v 已排除", toListen)
 				continue
 			}
 			// 已經啟動監聽的短號
 			if shortRoomListening.Contains(toListen) {
+				log.Debugf("房間 %v 已經啟動短號監聽", toListen)
 				continue
 			}
 
 			// 冷卻時暫不監聽直播
 			if coolingDown.Contains(toListen) {
+				log.Debugf("房間 %v 在冷卻時暫不監聽直播", toListen)
 				continue
 			}
 
@@ -37,13 +44,12 @@ func SubscribedRoomTracker(handleWs func(int64, *LiveInfo, live.Msg)) {
 
 			log.Info("正在啟動監聽房間: ", room)
 
-			stop, err := LaunchLiveServer(room, func(data *LiveInfo, msg live.Msg) {
+			go LaunchLiveServer(room, func(data *LiveInfo, msg live.Msg) {
 				handleWs(room, data, msg)
+			}, func(stop context.CancelFunc) {
+				stopMap.Store(room, stop)
 			})
 
-			if err == nil {
-				stopMap[room] = stop
-			}
 		}
 
 		for short := range shortRoomListening.Iter() {
@@ -53,12 +59,11 @@ func SubscribedRoomTracker(handleWs func(int64, *LiveInfo, live.Msg)) {
 		for toStop := range listening.Difference(rooms).Iter() {
 			room := toStop.(int64)
 
-			if stop, ok := stopMap[room]; ok {
+			if stop, ok := stopMap.LoadAndDelete(room); ok {
 
 				log.Info("正在中止監聽房間: ", room)
 
-				stop()
-				delete(stopMap, room)
+				stop.(context.CancelFunc)()
 			}
 		}
 	}
