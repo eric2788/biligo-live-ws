@@ -36,11 +36,13 @@ func coolDownLiveFetch(room int64) {
 	liveFetch.Remove(room)
 }
 
-var Debug = true
-
 func LaunchLiveServer(room int64, handle func(data *LiveInfo, msg biligo.Msg), cancelGet func(context.CancelFunc)) {
 
+	log.Debugf("[%v] 正在獲取直播資訊...", room)
+
 	liveInfo, err := GetLiveInfo(room) // 獲取直播資訊
+
+	log.Debugf("[%v] 獲取直播資訊成功。", room)
 
 	if err != nil {
 
@@ -86,14 +88,18 @@ func LaunchLiveServer(room int64, handle func(data *LiveInfo, msg biligo.Msg), c
 		}
 	}
 
-	live := biligo.NewLive(Debug, 30*time.Second, 0, func(err error) {
+	live := biligo.NewLive(false, 30*time.Second, 0, func(err error) {
 		log.Fatal(err)
 	})
+
+	log.Debugf("[%v] 正在連接到彈幕伺服器...", room)
 
 	if err := live.Conn(websocket.DefaultDialer, biligo.WsDefaultHost); err != nil {
 		log.Warn("連接伺服器時出現錯誤: ", err)
 		return
 	}
+
+	log.Debugf("[%v] 連接到彈幕伺服器成功。", room)
 
 	ctx, stop := context.WithCancel(context.Background())
 

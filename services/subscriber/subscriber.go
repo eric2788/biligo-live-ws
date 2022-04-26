@@ -14,31 +14,17 @@ var (
 	subscribeMap = sync.Map{}
 	expireMap    = sync.Map{}
 	log          = logrus.WithField("service", "subscriber")
-
-	useGoroutine = false
 )
 
 // Update 操作太慢，嘗試使用 go 懸掛
 func Update(identifier string, rooms []int64) {
-	if useGoroutine {
-		log.Infof("%v 的訂閱更新已加入隊列...", identifier)
-		queue.Add(identifier)
-		go func() {
-			subscribeMap.Store(identifier, rooms)
-			log.Infof("%v 的訂閱更新已完成。", identifier)
-			queue.Remove(identifier)
-		}()
-	} else {
-		r := time.Now()
+	log.Infof("%v 的訂閱更新已加入隊列...", identifier)
+	queue.Add(identifier)
+	go func() {
 		subscribeMap.Store(identifier, rooms)
-		d := time.Since(r)
-
-		if d.Seconds() > 10 {
-			log.Warnf("訂閱速度過慢 (> 10 秒)，已啟用懸掛方式。")
-			useGoroutine = true
-		}
-	}
-
+		log.Infof("%v 的訂閱更新已完成。", identifier)
+		queue.Remove(identifier)
+	}()
 }
 
 func ExpireAfter(identifier string, expired <-chan time.Time) {

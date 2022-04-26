@@ -6,7 +6,6 @@ import (
 	"github.com/eric2788/biligo-live-ws/controller/listening"
 	"github.com/eric2788/biligo-live-ws/controller/subscribe"
 	ws "github.com/eric2788/biligo-live-ws/controller/websocket"
-	"github.com/eric2788/biligo-live-ws/services/blive"
 	"github.com/eric2788/biligo-live-ws/services/database"
 	"github.com/eric2788/biligo-live-ws/services/updater"
 	"github.com/gin-gonic/gin"
@@ -26,10 +25,10 @@ func main() {
 
 	if *release {
 		gin.SetMode(gin.ReleaseMode)
-		blive.Debug = false
 		log.SetLevel(log.InfoLevel)
 	} else {
 		log.SetLevel(log.DebugLevel)
+		log.Debug("啟動debug模式")
 	}
 
 	log.Info("正在初始化數據庫...")
