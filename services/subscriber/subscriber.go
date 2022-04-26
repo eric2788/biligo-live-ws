@@ -10,13 +10,21 @@ import (
 )
 
 var (
-	subscribeMap = make(map[string][]int64)
+	queue        = set.NewSet()
+	subscribeMap = sync.Map{}
 	expireMap    = sync.Map{}
 	log          = logrus.WithField("service", "subscriber")
 )
 
+// Update 操作太慢，嘗試使用 go 懸掛
 func Update(identifier string, rooms []int64) {
-	subscribeMap[identifier] = rooms
+	log.Infof("%v 的訂閱更新已加入隊列...", identifier)
+	queue.Add(identifier)
+	go func() {
+		subscribeMap.Store(identifier, rooms)
+		log.Infof("%v 的訂閱更新已完成。", identifier)
+		queue.Remove(identifier)
+	}()
 }
 
 func ExpireAfter(identifier string, expired <-chan time.Time) {
@@ -26,7 +34,12 @@ func ExpireAfter(identifier string, expired <-chan time.Time) {
 func ExpireAfterWithCheck(identifier string, expired <-chan time.Time, checkExist bool) {
 
 	// 保險起見
-	if _, subBefore := subscribeMap[identifier]; subBefore && checkExist {
+	if _, subBefore := subscribeMap.Load(identifier); subBefore && checkExist {
+		return
+	}
+
+	// 隊列內有，防止過期
+	if checkExist && queue.Contains(identifier) {
 		return
 	}
 
@@ -41,7 +54,7 @@ func ExpireAfterWithCheck(identifier string, expired <-chan time.Time, checkExis
 					return
 				}
 				log.Infof("%v 的訂閱已過期。\n", identifier)
-				delete(subscribeMap, identifier)
+				subscribeMap.Delete(identifier)
 				return
 			case <-connected:
 				log.Infof("已終止用戶 %v 的訂閱過期。", identifier)
@@ -64,8 +77,8 @@ func CancelExpire(identifier string) {
 }
 
 func Get(identifier string) ([]int64, bool) {
-	if res, ok := subscribeMap[identifier]; ok {
-		return res, ok
+	if res, ok := subscribeMap.Load(identifier); ok {
+		return res.([]int64), ok
 	} else {
 		return nil, ok
 	}
@@ -80,9 +93,8 @@ func GetOrEmpty(identifier string) ([]int64, bool) {
 }
 
 func Poll(identifier string) ([]int64, bool) {
-	if res, ok := subscribeMap[identifier]; ok {
-		delete(subscribeMap, identifier)
-		return res, ok
+	if res, ok := subscribeMap.LoadAndDelete(identifier); ok {
+		return res.([]int64), ok
 	} else {
 		return nil, ok
 	}
@@ -90,24 +102,27 @@ func Poll(identifier string) ([]int64, bool) {
 
 func GetAllRooms() set.Set {
 	rooms := set.NewSet()
-	for _, v := range subscribeMap {
-		for _, room := range v {
+	subscribeMap.Range(func(key, value interface{}) bool {
+		for _, room := range value.([]int64) {
 			rooms.Add(room)
 		}
-	}
+		return true
+	})
 	return rooms
 }
 
 func GetAllSubscribers(room int64) []string {
 	identifiers := make([]string, 0)
-	for identifier, rooms := range subscribeMap {
-		for _, rm := range rooms {
+	subscribeMap.Range(func(identifier, rooms interface{}) bool {
+		for _, rm := range rooms.([]int64) {
 			if room == rm {
-				identifiers = append(identifiers, identifier)
+				identifiers = append(identifiers, identifier.(string))
 				break
 			}
 		}
-	}
+		return true
+	})
+
 	return identifiers
 }
 
@@ -161,7 +176,7 @@ func Remove(identifier string, rooms []int64) ([]int64, bool) {
 }
 
 func Delete(identifier string) {
-	delete(subscribeMap, identifier)
+	subscribeMap.Delete(identifier)
 }
 
 func ToSet(arr []int64) set.Set {

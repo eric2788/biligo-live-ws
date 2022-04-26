@@ -1,46 +1,27 @@
 package subscriber
 
 import (
-	"github.com/deckarep/golang-set"
 	"testing"
+	"time"
 )
 
-func TestUpdateRange(t *testing.T) {
+func BenchmarkAdd(b *testing.B) {
 
-	arr := []int64{1, 2, 3, 4, 5}
-
-	slice := []int64{1, 2}
-
-	result := UpdateRange(arr, slice, func(set mapset.Set, i int64) {
-		set.Remove(i)
-	})
-
-	t.Logf("Result: %v", result)
-
-	slice = []int64{2}
-
-	result = UpdateRange(result, slice, func(set mapset.Set, i int64) {
-		set.Add(i)
-	})
-
-	t.Logf("Result: %v", result)
-}
-
-func BenchmarkUpdateRange(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		arr := []int64{1, 2, 3, 4, 5}
-
-		slice := []int64{1, 2}
-
-		result := UpdateRange(arr, slice, func(set mapset.Set, i int64) {
-			set.Remove(i)
-		})
-
-		slice = []int64{2}
-
-		result = UpdateRange(result, slice, func(set mapset.Set, i int64) {
-			set.Add(i)
-		})
+	for i := 0; i < 3773; i++ {
+		Add("tester", []int64{int64(i)})
 	}
+
+	go func() {
+		for true {
+			GetAllSubscribers(1)
+		}
+	}()
+
+	start := time.Now()
+
+	Update("others", []int64{1145141919810})
+
+	elapsed := time.Since(start)
+	b.Logf("took %s", elapsed)
 
 }
