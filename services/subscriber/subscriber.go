@@ -10,13 +10,13 @@ import (
 )
 
 var (
-	subscribeMap = sync.Map{}
+	subscribeMap = make(map[string][]int64)
 	expireMap    = sync.Map{}
 	log          = logrus.WithField("service", "subscriber")
 )
 
 func Update(identifier string, rooms []int64) {
-	subscribeMap.Store(identifier, rooms)
+	subscribeMap[identifier] = rooms
 }
 
 func ExpireAfter(identifier string, expired <-chan time.Time) {
@@ -26,7 +26,7 @@ func ExpireAfter(identifier string, expired <-chan time.Time) {
 func ExpireAfterWithCheck(identifier string, expired <-chan time.Time, checkExist bool) {
 
 	// 保險起見
-	if _, subBefore := subscribeMap.Load(identifier); subBefore && checkExist {
+	if _, subBefore := subscribeMap[identifier]; subBefore && checkExist {
 		return
 	}
 
@@ -41,7 +41,7 @@ func ExpireAfterWithCheck(identifier string, expired <-chan time.Time, checkExis
 					return
 				}
 				log.Infof("%v 的訂閱已過期。\n", identifier)
-				subscribeMap.Delete(identifier)
+				delete(subscribeMap, identifier)
 				return
 			case <-connected:
 				log.Infof("已終止用戶 %v 的訂閱過期。", identifier)
@@ -64,8 +64,8 @@ func CancelExpire(identifier string) {
 }
 
 func Get(identifier string) ([]int64, bool) {
-	if res, ok := subscribeMap.Load(identifier); ok {
-		return res.([]int64), ok
+	if res, ok := subscribeMap[identifier]; ok {
+		return res, ok
 	} else {
 		return nil, ok
 	}
@@ -80,8 +80,9 @@ func GetOrEmpty(identifier string) ([]int64, bool) {
 }
 
 func Poll(identifier string) ([]int64, bool) {
-	if res, ok := subscribeMap.LoadAndDelete(identifier); ok {
-		return res.([]int64), ok
+	if res, ok := subscribeMap[identifier]; ok {
+		delete(subscribeMap, identifier)
+		return res, ok
 	} else {
 		return nil, ok
 	}
@@ -89,26 +90,24 @@ func Poll(identifier string) ([]int64, bool) {
 
 func GetAllRooms() set.Set {
 	rooms := set.NewSet()
-	subscribeMap.Range(func(k, v interface{}) bool {
-		for _, room := range v.([]int64) {
+	for _, v := range subscribeMap {
+		for _, room := range v {
 			rooms.Add(room)
 		}
-		return true
-	})
+	}
 	return rooms
 }
 
 func GetAllSubscribers(room int64) []string {
 	identifiers := make([]string, 0)
-	subscribeMap.Range(func(identifier, rooms interface{}) bool {
-		for _, rm := range rooms.([]int64) {
+	for identifier, rooms := range subscribeMap {
+		for _, rm := range rooms {
 			if room == rm {
-				identifiers = append(identifiers, identifier.(string))
+				identifiers = append(identifiers, identifier)
 				break
 			}
 		}
-		return true
-	})
+	}
 	return identifiers
 }
 
@@ -162,7 +161,7 @@ func Remove(identifier string, rooms []int64) ([]int64, bool) {
 }
 
 func Delete(identifier string) {
-	subscribeMap.Delete(identifier)
+	delete(subscribeMap, identifier)
 }
 
 func ToSet(arr []int64) set.Set {

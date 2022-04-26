@@ -7,10 +7,9 @@ import (
 	"github.com/gorilla/websocket"
 	"net/http"
 	"os"
-	"sync"
 )
 
-var globalWebSockets = sync.Map{}
+var globalWebSockets = make(map[string]*WebSocket)
 
 func OpenGlobalWebSocket(c *gin.Context) {
 
@@ -34,11 +33,11 @@ func OpenGlobalWebSocket(c *gin.Context) {
 	// 客戶端正常關閉連接
 	ws.SetCloseHandler(func(code int, text string) error {
 		log.Infof("已關閉對 %v 的 Websocket 連接: (%v) %v", identifier, code, text)
-		globalWebSockets.Delete(identifier)
+		delete(globalWebSockets, identifier)
 		return ws.WriteMessage(websocket.CloseMessage, nil)
 	})
 
-	globalWebSockets.Store(identifier, &WebSocket{ws: ws})
+	globalWebSockets[identifier] = &WebSocket{ws: ws}
 
 	go func() {
 		for {
@@ -69,7 +68,7 @@ func writeGlobalMessage(identifier string, socket *WebSocket, data BLiveData) er
 		log.Warnf("向 用戶 %v 發送直播數據時出現錯誤: (%T)%v\n", identifier, err, err)
 		log.Warnf("關閉對用戶 %v 的連線。", identifier)
 		_ = con.Close()
-		globalWebSockets.Delete(identifier)
+		delete(globalWebSockets, identifier)
 	}
 
 	return nil

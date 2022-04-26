@@ -126,12 +126,12 @@ func handleBLiveMessage(room int64, info *blive.LiveInfo, msg live.Msg) {
 	}
 
 	// 全局用戶
-	globalWebSockets.Range(func(id, conn interface{}) bool {
-		if err := writeGlobalMessage(id.(string), conn.(*WebSocket), bLiveData); err != nil {
+	for id, conn := range globalWebSockets {
+		if err := writeGlobalMessage(id, conn, bLiveData); err != nil {
 			log.Warnf("向 用戶 %v 發送直播數據時出現錯誤: (%T)%v\n", id, err, err)
 		}
-		return true
-	})
+	}
+
 }
 
 func writeMessage(identifier string, data BLiveData) error {
