@@ -58,6 +58,7 @@ func LaunchLiveServer(room int64, handle func(data *LiveInfo, msg biligo.Msg), c
 			}()
 		}
 
+		log.Errorf("[%v] 獲取直播資訊失敗: %v", room, err)
 		return
 	}
 
