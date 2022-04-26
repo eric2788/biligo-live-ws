@@ -23,7 +23,7 @@ func TestGetRoomInfo(t *testing.T) {
 }
 
 func UpdateDbFromHttpToHttps(t *testing.T) {
-	database.UpdateDB(func(db *leveldb.DB) error {
+	database.UpdateDB(func(db *leveldb.Transaction) error {
 		iter := db.NewIterator(util.BytesPrefix([]byte("user:")), nil)
 		for iter.Next() {
 			var userInfo UserInfo
