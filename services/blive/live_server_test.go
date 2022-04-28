@@ -5,6 +5,7 @@ import (
 	live "github.com/eric2788/biligo-live"
 	"github.com/eric2788/biligo-live-ws/services/database"
 	"github.com/go-playground/assert/v2"
+	"github.com/sirupsen/logrus"
 	"sync"
 	"testing"
 	"time"
@@ -26,6 +27,7 @@ func TestLaunchLiveServer(t *testing.T) {
 
 	var cancel context.CancelFunc
 	wg := &sync.WaitGroup{}
+	wg.Add(1)
 
 	go LaunchLiveServer(wg, 24643640, func(data *LiveInfo, msg live.Msg) {
 		t.Log(data, msg)
@@ -44,5 +46,6 @@ func TestLaunchLiveServer(t *testing.T) {
 }
 
 func init() {
+	logrus.SetLevel(logrus.DebugLevel)
 	_ = database.StartDB()
 }

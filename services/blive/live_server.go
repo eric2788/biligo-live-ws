@@ -38,6 +38,8 @@ func coolDownLiveFetch(room int64) {
 
 func LaunchLiveServer(wg *sync.WaitGroup, room int64, handle func(data *LiveInfo, msg biligo.Msg), cancelGet func(context.CancelFunc)) {
 
+	defer wg.Done()
+
 	log.Debugf("[%v] 正在獲取直播資訊...", room)
 
 	liveInfo, err := GetLiveInfo(room) // 獲取直播資訊
@@ -151,7 +153,6 @@ func LaunchLiveServer(wg *sync.WaitGroup, room int64, handle func(data *LiveInfo
 	}
 
 	cancelGet(stop)
-	wg.Done()
 }
 
 func shortDur(d time.Duration) string {
