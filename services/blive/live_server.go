@@ -36,9 +36,7 @@ func coolDownLiveFetch(room int64) {
 	liveFetch.Remove(room)
 }
 
-func LaunchLiveServer(wg *sync.WaitGroup, room int64, handle func(data *LiveInfo, msg biligo.Msg), cancelGet func(context.CancelFunc)) {
-
-	defer wg.Done()
+func LaunchLiveServer(room int64, handle func(data *LiveInfo, msg biligo.Msg)) (context.CancelFunc, error) {
 
 	log.Debugf("[%v] 正在獲取直播資訊...", room)
 
@@ -61,7 +59,7 @@ func LaunchLiveServer(wg *sync.WaitGroup, room int64, handle func(data *LiveInfo
 		}
 
 		log.Errorf("[%v] 獲取直播資訊失敗: %v", room, err)
-		return
+		return nil, err
 	}
 
 	realRoom := liveInfo.RoomId
@@ -76,7 +74,7 @@ func LaunchLiveServer(wg *sync.WaitGroup, room int64, handle func(data *LiveInfo
 		if listening.Contains(realRoom) {
 			log.Infof("檢測到 %v 為短號，真正房間號為 %v 且正在監聽中。", room, realRoom)
 			shortRoomListening.Add(room)
-			return
+			return nil, nil
 		}
 
 	}
@@ -99,7 +97,7 @@ func LaunchLiveServer(wg *sync.WaitGroup, room int64, handle func(data *LiveInfo
 
 	if err := live.Conn(websocket.DefaultDialer, biligo.WsDefaultHost); err != nil {
 		log.Warn("連接伺服器時出現錯誤: ", err)
-		return
+		return nil, err
 	}
 
 	log.Debugf("[%v] 連接到彈幕伺服器成功。", room)
@@ -152,7 +150,7 @@ func LaunchLiveServer(wg *sync.WaitGroup, room int64, handle func(data *LiveInfo
 		shortRoomListening.Add(room)
 	}
 
-	cancelGet(stop)
+	return stop, nil
 }
 
 func shortDur(d time.Duration) string {
