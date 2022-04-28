@@ -5,6 +5,7 @@ import (
 	live "github.com/eric2788/biligo-live"
 	"github.com/eric2788/biligo-live-ws/services/database"
 	"github.com/go-playground/assert/v2"
+	"sync"
 	"testing"
 	"time"
 )
@@ -24,11 +25,15 @@ func TestGetLiveInfo(t *testing.T) {
 func TestLaunchLiveServer(t *testing.T) {
 
 	var cancel context.CancelFunc
-	LaunchLiveServer(24643640, func(data *LiveInfo, msg live.Msg) {
+	wg := &sync.WaitGroup{}
+
+	go LaunchLiveServer(wg, 24643640, func(data *LiveInfo, msg live.Msg) {
 		t.Log(data, msg)
 	}, func(cancelFunc context.CancelFunc) {
 		cancel = cancelFunc
 	})
+
+	wg.Wait()
 
 	if cancel == nil {
 		t.Fatal("cancel is nil")
