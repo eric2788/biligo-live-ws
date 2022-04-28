@@ -95,6 +95,7 @@ func LaunchLiveServer(
 
 	if err := live.Conn(websocket.DefaultDialer, biligo.WsDefaultHost); err != nil {
 		log.Warn("連接伺服器時出現錯誤: ", err)
+		finished(nil, err)
 		return
 	}
 
