@@ -54,6 +54,8 @@ func SubscribedRoomTracker(handleWs func(int64, *LiveInfo, live.Msg)) {
 
 		}
 
+		wg.Wait()
+
 		for short := range shortRoomListening.Iter() {
 			rooms.Add(short)
 		}
@@ -69,6 +71,5 @@ func SubscribedRoomTracker(handleWs func(int64, *LiveInfo, live.Msg)) {
 			}
 		}
 
-		wg.Wait()
 	}
 }
