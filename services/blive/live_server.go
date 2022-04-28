@@ -36,13 +36,18 @@ func coolDownLiveFetch(room int64) {
 	liveFetch.Remove(room)
 }
 
-func LaunchLiveServer(wg *sync.WaitGroup, room int64, handle func(data *LiveInfo, msg biligo.Msg), cancelGet func(context.CancelFunc)) {
+func LaunchLiveServer(
+	wg *sync.WaitGroup,
+	room int64,
+	handle func(data *LiveInfo, msg biligo.Msg),
+	finished func(context.CancelFunc, error),
+) {
+
+	defer wg.Done()
 
 	log.Debugf("[%v] 正在獲取直播資訊...", room)
 
 	liveInfo, err := GetLiveInfo(room) // 獲取直播資訊
-
-	log.Debugf("[%v] 獲取直播資訊成功。", room)
 
 	if err != nil {
 
@@ -59,8 +64,11 @@ func LaunchLiveServer(wg *sync.WaitGroup, room int64, handle func(data *LiveInfo
 		}
 
 		log.Errorf("[%v] 獲取直播資訊失敗: %v", room, err)
+		finished(nil, err)
 		return
 	}
+
+	log.Debugf("[%v] 獲取直播資訊成功。", room)
 
 	realRoom := liveInfo.RoomId
 
@@ -79,18 +87,8 @@ func LaunchLiveServer(wg *sync.WaitGroup, room int64, handle func(data *LiveInfo
 
 	}
 
-	removeListen := func() {
-		listening.Remove(realRoom)
-		if room != realRoom {
-			shortRoomListening.Remove(room)
-		}
-		if shortRoom, ok := ShortRoomMap.Load(realRoom); ok {
-			shortRoomListening.Remove(shortRoom)
-		}
-	}
-
 	live := biligo.NewLive(false, 30*time.Second, 0, func(err error) {
-		log.Fatal(err)
+		log.Error(err)
 	})
 
 	log.Debugf("[%v] 正在連接到彈幕伺服器...", room)
@@ -108,7 +106,6 @@ func LaunchLiveServer(wg *sync.WaitGroup, room int64, handle func(data *LiveInfo
 
 		if err := live.Enter(ctx, realRoom, "", 0); err != nil {
 			log.Warnf("監聽房間 %v 時出現錯誤: %v\n", realRoom, err)
-			removeListen()
 			stop()
 		}
 
@@ -138,20 +135,23 @@ func LaunchLiveServer(wg *sync.WaitGroup, room int64, handle func(data *LiveInfo
 				handle(liveInfo, tp.Msg)
 			case <-ctx.Done():
 				log.Infof("房間 %v 監聽中止。\n", realRoom)
-				removeListen()
+				finished(nil, nil)
+				if realRoom != room {
+					listening.Remove(realRoom)
+					shortRoomListening.Remove(room)
+				}
 				return
 			}
 		}
 	}()
 
-	listening.Add(realRoom)
 	if room != realRoom {
 		log.Infof("%v 為短號，已新增真正的房間號 %v => %v 作為監聽。", room, room, realRoom)
 		shortRoomListening.Add(room)
+		listening.Add(realRoom)
 	}
 
-	cancelGet(stop)
-	wg.Done()
+	finished(stop, nil)
 }
 
 func shortDur(d time.Duration) string {
