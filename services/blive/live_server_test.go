@@ -6,7 +6,6 @@ import (
 	"github.com/eric2788/biligo-live-ws/services/database"
 	"github.com/eric2788/biligo-live-ws/services/subscriber"
 	"github.com/go-playground/assert/v2"
-	"os"
 	"sync"
 	"testing"
 	"time"
@@ -31,9 +30,8 @@ func TestSubscribedRoomTracker(t *testing.T) {
 	lastRoom, lastStr := int64(0), ""
 	go SubscribedRoomTracker(func(i int64, info *LiveInfo, msg live.Msg) {
 		data := string(msg.Raw())
-		if data == lastStr && lastRoom == i {
-			t.Error("duplicated")
-			os.Exit(1)
+		if data == lastStr && lastRoom == i && msg.Cmd() != "HEARTBEAT_REPLY" {
+			panic("duplicated message")
 		}
 		t.Log(i, data)
 		lastRoom = i
