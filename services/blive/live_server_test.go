@@ -29,11 +29,13 @@ func TestLaunchLiveServer(t *testing.T) {
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
 
-	go LaunchLiveServer(wg, 24643640, func(data *LiveInfo, msg live.Msg) {
+	cancel, err := LaunchLiveServer(24643640, func(data *LiveInfo, msg live.Msg) {
 		t.Log(data, msg)
-	}, func(cancelFunc context.CancelFunc) {
-		cancel = cancelFunc
 	})
+
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	wg.Wait()
 
