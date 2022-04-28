@@ -14,6 +14,7 @@ var stopMap = sync.Map{}
 
 func SubscribedRoomTracker(handleWs func(int64, *LiveInfo, live.Msg)) {
 	log.Info("已啟動房間訂閱監聽。")
+	wg := &sync.WaitGroup{}
 	for {
 		time.Sleep(time.Second * 5)
 
@@ -44,7 +45,8 @@ func SubscribedRoomTracker(handleWs func(int64, *LiveInfo, live.Msg)) {
 
 			log.Info("正在啟動監聽房間: ", room)
 
-			go LaunchLiveServer(room, func(data *LiveInfo, msg live.Msg) {
+			wg.Add(1)
+			go LaunchLiveServer(wg, room, func(data *LiveInfo, msg live.Msg) {
 				handleWs(room, data, msg)
 			}, func(stop context.CancelFunc) {
 				stopMap.Store(room, stop)
@@ -66,5 +68,7 @@ func SubscribedRoomTracker(handleWs func(int64, *LiveInfo, live.Msg)) {
 				stop.(context.CancelFunc)()
 			}
 		}
+
+		wg.Wait()
 	}
 }
