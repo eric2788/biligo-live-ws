@@ -46,19 +46,20 @@ func SubscribedRoomTracker(handleWs func(int64, *LiveInfo, live.Msg)) {
 			log.Info("正在啟動監聽房間: ", room)
 
 			wg.Add(1)
-			go LaunchLiveServer(wg, room, func(data *LiveInfo, msg live.Msg) {
-				handleWs(room, data, msg)
-			}, func(stop context.CancelFunc, err error) {
-				if err == nil && stop != nil {
-					stopMap.Store(room, stop)
-				} else {
-					listening.Remove(room)
-					if short, ok := ShortRoomMap.Load(room); ok {
-						shortRoomListening.Remove(short)
+			go LaunchLiveServer(wg, room,
+				func(data *LiveInfo, msg live.Msg) {
+					handleWs(room, data, msg)
+				}, func(stop context.CancelFunc, err error) {
+					if err == nil && stop != nil {
+						stopMap.Store(room, stop)
+					} else {
+						listening.Remove(room)
+						if short, ok := ShortRoomMap.Load(room); ok {
+							shortRoomListening.Remove(short)
+						}
+						log.Warnf("已移除房間 %v 的監聽狀態", room)
 					}
-					log.Warnf("已移除房間 %v 的監聽狀態", room)
-				}
-			})
+				})
 			listening.Add(room)
 		}
 
