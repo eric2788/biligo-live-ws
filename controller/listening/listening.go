@@ -50,6 +50,7 @@ func GetListening(c *gin.Context) {
 	listens := blive.GetEntered()
 
 	c.JSON(200, gin.H{
+		"total_started_count":   len(blive.GetListening()),
 		"total_listening_count": len(listens),
 		"rooms":                 listens,
 	})

@@ -27,16 +27,9 @@ func TestSubscribedRoomTracker(t *testing.T) {
 	subscriber.Add("tester-1", []int64{255, 525, 545, 5424})
 	subscriber.Add("tester-2", []int64{573893, 394681, 48743})
 
-	lastRoom, lastStr := int64(0), ""
 	go SubscribedRoomTracker(func(i int64, info *LiveInfo, msg live.Msg) {
 		data := string(msg.Raw())
-		if data == lastStr && lastRoom == i && msg.Cmd() != "HEARTBEAT_REPLY" {
-			panic("duplicated message")
-		}
 		t.Log(i, data)
-		lastRoom = i
-		lastStr = data
-
 	})
 
 	<-time.After(time.Second * 15)
