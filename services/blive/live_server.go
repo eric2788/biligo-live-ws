@@ -18,6 +18,8 @@ var (
 	liveFetch          = set.NewSet()
 	coolingDown        = set.NewSet()
 
+	enteredRooms = set.NewSet()
+
 	ShortRoomMap = sync.Map{}
 )
 
@@ -25,6 +27,10 @@ var (
 	ErrNotFound = errors.New("房間不存在")
 	ErrTooFast  = errors.New("請求頻繁")
 )
+
+func GetEntered() []interface{} {
+	return enteredRooms.ToSlice()
+}
 
 func GetListening() []interface{} {
 	return listening.ToSlice()
@@ -82,6 +88,7 @@ func LaunchLiveServer(
 		if listening.Contains(realRoom) {
 			log.Infof("檢測到 %v 為短號，真正房間號為 %v 且正在監聽中。", room, realRoom)
 			shortRoomListening.Add(room)
+			finished(nil, nil)
 			return
 		}
 
@@ -113,6 +120,10 @@ func LaunchLiveServer(
 	}()
 
 	go func() {
+
+		enteredRooms.Add(realRoom)
+		defer enteredRooms.Remove(realRoom)
+
 		for {
 			select {
 			case tp := <-live.Rev:

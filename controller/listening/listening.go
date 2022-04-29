@@ -48,9 +48,12 @@ func GetListenRoom(c *gin.Context) {
 func GetListening(c *gin.Context) {
 
 	listens := blive.GetListening()
+	entered := blive.GetEntered()
 
 	c.JSON(200, gin.H{
 		"total_listening_count": len(listens),
 		"rooms":                 listens,
+		"entered":               entered,
+		"total_entered_count":   len(entered),
 	})
 }
