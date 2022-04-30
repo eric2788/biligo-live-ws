@@ -6,6 +6,7 @@ import (
 	"github.com/eric2788/biligo-live-ws/services/database"
 	"github.com/eric2788/biligo-live-ws/services/subscriber"
 	"github.com/go-playground/assert/v2"
+	"github.com/sirupsen/logrus"
 	"sync"
 	"testing"
 	"time"
@@ -36,7 +37,6 @@ func TestSubscribedRoomTracker(t *testing.T) {
 }
 
 func TestLaunchLiveServer(t *testing.T) {
-
 	var cancel context.CancelFunc
 	wg := sync.WaitGroup{}
 	wg.Add(1)
@@ -57,5 +57,6 @@ func TestLaunchLiveServer(t *testing.T) {
 }
 
 func init() {
+	logrus.SetLevel(logrus.DebugLevel)
 	_ = database.StartDB()
 }

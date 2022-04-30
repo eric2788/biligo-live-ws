@@ -106,3 +106,32 @@ type UserInfoData struct {
 		Type  int    `json:"type"`
 	} `json:"official"`
 }
+
+type WebSocketInfo struct {
+	V1Resp
+	Data *WebSocketInfoData `json:"data"`
+
+	LowLatencyHost string `json:"low_latency_host,omitempty"`
+}
+
+type HostServerInfo struct {
+	ServerInfo
+	WssPort int `json:"wss_port"`
+	WsPort  int `json:"ws_port"`
+}
+
+type ServerInfo struct {
+	Host string `json:"host"`
+	Port int    `json:"port"`
+}
+
+type WebSocketInfoData struct {
+	RefreshRate int    `json:"refresh_rate"`
+	MaxDelay    int    `json:"max_delay"`
+	Port        int    `json:"port"`
+	Host        string `json:"host"`
+
+	HostServerList []HostServerInfo `json:"host_server_list"`
+
+	ServerList []ServerInfo `json:"server_list"`
+}

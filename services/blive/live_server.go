@@ -5,6 +5,7 @@ import (
 	"errors"
 	set "github.com/deckarep/golang-set"
 	biligo "github.com/eric2788/biligo-live"
+	"github.com/eric2788/biligo-live-ws/services/api"
 	"github.com/gorilla/websocket"
 	"strings"
 	"sync"
@@ -98,9 +99,19 @@ func LaunchLiveServer(
 		log.Error(err)
 	})
 
+	var wsHost = biligo.WsDefaultHost
+	lowHost := api.GetLowLatencyHost(realRoom, false)
+
+	if lowHost == "" {
+		log.Warnf("[%v] 無法獲取低延遲 Host，將使用預設 Host", realRoom)
+	} else {
+		log.Debugf("[%v] 已採用 %v 作為低延遲 Host", realRoom, lowHost)
+		wsHost = lowHost
+	}
+
 	log.Debugf("[%v] 正在連接到彈幕伺服器...", room)
 
-	if err := live.Conn(websocket.DefaultDialer, biligo.WsDefaultHost); err != nil {
+	if err := live.Conn(websocket.DefaultDialer, wsHost); err != nil {
 		log.Warn("連接伺服器時出現錯誤: ", err)
 		finished(nil, err)
 		return
@@ -140,6 +151,8 @@ func LaunchLiveServer(
 						log.Infof("房間 %v 開播，正在更新直播資訊...\n", realRoom)
 						// 更新一次直播资讯
 						UpdateLiveInfo(liveInfo, realRoom)
+						// 更新一次 WebSocket 資訊
+						go api.UpdateLowLatencyHost(realRoom)
 					}
 
 					// 但開播指令推送多次保留
