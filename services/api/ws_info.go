@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"github.com/eric2788/biligo-live-ws/services/database"
 	"github.com/go-ping/ping"
+	"github.com/syndtr/goleveldb/leveldb"
+	"github.com/syndtr/goleveldb/leveldb/util"
 	"io"
 	"net/http"
 	"sync"
@@ -153,7 +155,8 @@ func getLowLatencyHost(infos []HostServerInfo) string {
 			current := minPing.Load().(*LowPingInfo)
 			log.Debugf("目前最少延遲: %v (%v)", current.Ping, current.Host)
 			log.Debugf("%v 的延遲: %v", info.Host, avgPtt)
-			if avgPtt < current.Ping {
+			// 0 視為 timeout
+			if avgPtt < current.Ping && avgPtt != 0 {
 				log.Debugf("已成功切換到 %v", info.Host)
 				minPing.Store(&LowPingInfo{Host: info.Host, Ping: avgPtt})
 			}
@@ -167,4 +170,37 @@ func getLowLatencyHost(infos []HostServerInfo) string {
 type LowPingInfo struct {
 	Host string
 	Ping time.Duration
+}
+
+func ResetAllLowLatency() {
+	err := database.UpdateDB(func(db *leveldb.Transaction) error {
+		iter := db.NewIterator(&util.Range{Start: []byte("wsInfo:")}, nil)
+		for iter.Next() {
+			var wsInfo = &WebSocketInfo{}
+			if err := json.Unmarshal(iter.Value(), wsInfo); err != nil {
+				log.Errorf("嘗試 decode %v 的數據時錯誤: %v, 已略過", string(iter.Key()), err)
+				continue
+			}
+			wsInfo.LowLatencyHost = ""
+			if b, err := json.Marshal(wsInfo); err != nil {
+				log.Errorf("嘗試重新 encode %v 的數據時錯誤: %v, 已略過", string(iter.Key()), err)
+				continue
+			} else {
+				if err := db.Put(iter.Key(), b, nil); err != nil {
+					log.Errorf("數據 %v 重設失敗: %v", string(iter.Key()), err)
+				} else {
+					log.Infof("數據 %v 重設成功。", string(iter.Key()))
+				}
+			}
+
+		}
+		iter.Release()
+		return iter.Error()
+	})
+
+	if err != nil {
+		log.Warnf("重設所有房間的低延遲 Host 時出現錯誤: %v", err)
+	} else {
+		log.Infof("已重設所有房間的低延遲 Host")
+	}
 }

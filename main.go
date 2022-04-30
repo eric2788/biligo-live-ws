@@ -6,6 +6,7 @@ import (
 	"github.com/eric2788/biligo-live-ws/controller/listening"
 	"github.com/eric2788/biligo-live-ws/controller/subscribe"
 	ws "github.com/eric2788/biligo-live-ws/controller/websocket"
+	"github.com/eric2788/biligo-live-ws/services/api"
 	"github.com/eric2788/biligo-live-ws/services/database"
 	"github.com/eric2788/biligo-live-ws/services/updater"
 	"github.com/gin-gonic/gin"
@@ -48,6 +49,10 @@ func main() {
 			}
 			gin.Logger()(c)
 		})
+	}
+
+	if os.Getenv("RESET_LOW_LATENCY") == "true" {
+		go api.ResetAllLowLatency()
 	}
 
 	router.Use(CORS())
