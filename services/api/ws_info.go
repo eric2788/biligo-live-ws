@@ -142,12 +142,12 @@ func getLowLatencyHost(infos []HostServerInfo) string {
 			p.SetPrivileged(true)
 			p.Timeout = time.Second * 5
 			if err != nil {
-				log.Errorf("無法解析 %v :%v", info.Host, err)
+				log.Debugf("無法解析 %v :%v", info.Host, err)
 				return
 			}
 			err = p.Run()
 			if err != nil {
-				log.Errorf("嘗試檢測 %v 的延遲時出現錯誤: %v", info.Host, err)
+				log.Debugf("嘗試檢測 %v 的延遲時出現錯誤: %v", info.Host, err)
 				return
 			}
 			stats := p.Statistics()
@@ -158,7 +158,7 @@ func getLowLatencyHost(infos []HostServerInfo) string {
 
 			// packet loss
 			if stats.PacketLoss > 50 {
-				log.Errorf("%v 的掉包率大於 50, 已略過", info.Host)
+				log.Debugf("%v 的掉包率大於 50, 已略過", info.Host)
 				return
 			}
 
