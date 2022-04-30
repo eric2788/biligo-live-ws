@@ -30,6 +30,10 @@ var (
 	ErrTooFast  = errors.New("請求頻繁")
 )
 
+func GetExcepted() []interface{} {
+	return excepted.ToSlice()
+}
+
 func GetEntered() []interface{} {
 	return enteredRooms.ToSlice()
 }

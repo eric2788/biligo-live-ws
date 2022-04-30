@@ -51,6 +51,7 @@ func GetListening(c *gin.Context) {
 
 	c.JSON(200, gin.H{
 		"total_started_count":   len(blive.GetListening()),
+		"excepted_count":        len(blive.GetExcepted()),
 		"total_listening_count": len(listens),
 		"rooms":                 listens,
 	})
