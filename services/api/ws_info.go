@@ -151,12 +151,23 @@ func getLowLatencyHost(infos []HostServerInfo) string {
 				return
 			}
 			stats := p.Statistics()
+
+			log.Debugf("[%v] 已發送封包: %v", info.Host, stats.PacketsSent)
+			log.Debugf("[%v] 已接收封包: %v", info.Host, stats.PacketsRecv)
+			log.Debugf("[%v] 掉包率: %v", info.Host, stats.PacketLoss)
+
+			// packet loss
+			if stats.PacketLoss > 0.5 {
+				log.Errorf("%v 的掉包率大於 0.5, 已略過", info.Host)
+				return
+			}
+
 			avgPtt := stats.AvgRtt
 			current := minPing.Load().(*LowPingInfo)
 			log.Debugf("目前最少延遲: %v (%v)", current.Ping, current.Host)
 			log.Debugf("%v 的延遲: %v", info.Host, avgPtt)
-			// 0 視為 timeout
-			if avgPtt < current.Ping && avgPtt != 0 {
+
+			if avgPtt < current.Ping {
 				log.Debugf("已成功切換到 %v", info.Host)
 				minPing.Store(&LowPingInfo{Host: info.Host, Ping: avgPtt})
 			}
