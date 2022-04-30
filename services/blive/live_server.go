@@ -107,11 +107,11 @@ func LaunchLiveServer(
 	var wsHost = biligo.WsDefaultHost
 
 	// 如果有強制指定 ws host, 則使用
-	if os.Getenv("BILI_WS_HOST_FORCE") != "" {
+	if strings.HasPrefix(os.Getenv("BILI_WS_HOST_FORCE"), "wss://") {
 
 		wsHost = os.Getenv("BILI_WS_HOST_FORCE")
 
-	} else { // 否則從 api 獲取 host list 並提取低延遲
+	} else if os.Getenv("BILI_WS_HOST_FORCE") == "AUTO" { // 否則從 api 獲取 host list 並提取低延遲
 
 		lowHost := api.GetLowLatencyHost(realRoom, false)
 
@@ -122,7 +122,7 @@ func LaunchLiveServer(
 			wsHost = lowHost
 		}
 
-	}
+	} // 否則繼續使用 biligo.WsDefaultHost
 
 	log.Debugf("[%v] 已採用 %v 作為直播 Host", realRoom, wsHost)
 
