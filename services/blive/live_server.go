@@ -7,6 +7,7 @@ import (
 	biligo "github.com/eric2788/biligo-live"
 	"github.com/eric2788/biligo-live-ws/services/api"
 	"github.com/gorilla/websocket"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -100,14 +101,26 @@ func LaunchLiveServer(
 	})
 
 	var wsHost = biligo.WsDefaultHost
-	lowHost := api.GetLowLatencyHost(realRoom, false)
 
-	if lowHost == "" {
-		log.Warnf("[%v] 無法獲取低延遲 Host，將使用預設 Host", realRoom)
-	} else {
-		log.Debugf("[%v] 已採用 %v 作為低延遲 Host", realRoom, lowHost)
-		wsHost = lowHost
+	// 如果有強制指定 ws host, 則使用
+	if os.Getenv("BILI_WS_HOST_FORCE") != "" {
+
+		wsHost = os.Getenv("BILI_WS_HOST_FORCE")
+
+	} else { // 否則從 api 獲取 host list 並提取低延遲
+
+		lowHost := api.GetLowLatencyHost(realRoom, false)
+
+		if lowHost == "" {
+			log.Warnf("[%v] 無法獲取低延遲 Host，將使用預設 Host", realRoom)
+		} else {
+			log.Debugf("[%v] 已採用 %v 作為低延遲 Host", realRoom, lowHost)
+			wsHost = lowHost
+		}
+
 	}
+
+	log.Debugf("[%v] 已採用 %v 作為直播 Host", realRoom, wsHost)
 
 	log.Debugf("[%v] 正在連接到彈幕伺服器...", room)
 

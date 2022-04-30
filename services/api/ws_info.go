@@ -157,8 +157,8 @@ func getLowLatencyHost(infos []HostServerInfo) string {
 			log.Debugf("[%v] 掉包率: %v", info.Host, stats.PacketLoss)
 
 			// packet loss
-			if stats.PacketLoss > 0.5 {
-				log.Errorf("%v 的掉包率大於 0.5, 已略過", info.Host)
+			if stats.PacketLoss > 50 {
+				log.Errorf("%v 的掉包率大於 50, 已略過", info.Host)
 				return
 			}
 
@@ -190,6 +190,10 @@ func ResetAllLowLatency() {
 			var wsInfo = &WebSocketInfo{}
 			if err := json.Unmarshal(iter.Value(), wsInfo); err != nil {
 				log.Errorf("嘗試 decode %v 的數據時錯誤: %v, 已略過", string(iter.Key()), err)
+				continue
+			}
+			// 本身沒有設置
+			if wsInfo.LowLatencyHost == "" {
 				continue
 			}
 			wsInfo.LowLatencyHost = ""
