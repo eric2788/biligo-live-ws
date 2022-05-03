@@ -29,8 +29,7 @@ func TestSubscribedRoomTracker(t *testing.T) {
 	subscriber.Add("tester-2", []int64{573893, 394681, 48743})
 
 	go SubscribedRoomTracker(func(i int64, info *LiveInfo, msg live.Msg) {
-		data := string(msg.Raw())
-		t.Log(i, data)
+		t.Log(i, msg.Cmd())
 	})
 
 	<-time.After(time.Second * 15)
@@ -41,7 +40,7 @@ func TestLaunchLiveServer(t *testing.T) {
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 	go LaunchLiveServer(&wg, 24643640, func(data *LiveInfo, msg live.Msg) {
-		t.Log(string(msg.Raw()))
+		t.Log(msg.Cmd())
 	}, func(stop context.CancelFunc, err error) {
 		if err == nil {
 			cancel = stop
