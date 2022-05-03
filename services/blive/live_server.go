@@ -174,7 +174,8 @@ func LaunchLiveServer(
 
 					// 但開播指令推送多次保留
 				}
-				handle(liveInfo, tp.Msg)
+				// 使用懸掛防止下一個訊息阻塞等待
+				go handle(liveInfo, tp.Msg)
 			case <-ctx.Done():
 				log.Infof("房間 %v 監聽中止。\n", realRoom)
 				finished(nil, nil)

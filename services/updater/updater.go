@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	VersionTag = "0.1.12"
+	VersionTag = "0.1.13"
 	repoUrl    = "https://api.github.com/repos/eric2788/biligo-live-ws/releases/latest"
 )
 
