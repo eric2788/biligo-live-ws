@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 	set "github.com/deckarep/golang-set"
-	biligo "github.com/eric2788/biligo-live"
 	"github.com/eric2788/biligo-live-ws/services/api"
 	"github.com/gorilla/websocket"
+	biligo "github.com/iyear/biligo-live"
 	"os"
 	"strings"
 	"sync"
@@ -23,6 +23,8 @@ var (
 	enteredRooms = set.NewSet()
 
 	ShortRoomMap = sync.Map{}
+
+	heartBeatMap = sync.Map{}
 )
 
 var (
@@ -156,7 +158,7 @@ func LaunchLiveServer(
 			select {
 			case tp := <-live.Rev:
 				if tp.Error != nil {
-					log.Info(tp.Error)
+					log.Error(tp.Error)
 					continue
 				}
 				// 開播 !?
@@ -176,6 +178,12 @@ func LaunchLiveServer(
 				}
 				// 使用懸掛防止下一個訊息阻塞等待
 				go handle(liveInfo, tp.Msg)
+
+				// 記錄上一次接收到 Heartbeat 的時間
+				if _, ok := tp.Msg.(*biligo.MsgHeartbeatReply); ok {
+					go listenHeatBeatExpire(realRoom, time.Now(), stop)
+				}
+
 			case <-ctx.Done():
 				log.Infof("房間 %v 監聽中止。\n", realRoom)
 				finished(nil, nil)
@@ -195,6 +203,16 @@ func LaunchLiveServer(
 	}
 
 	finished(stop, nil)
+}
+
+func listenHeatBeatExpire(realRoom int64, lastListen time.Time, stop context.CancelFunc) {
+	heartBeatMap.Store(realRoom, lastListen)
+	<-time.After(time.Minute)
+	// 一分鐘後 heartbeat 依然相同
+	if lastTime, ok := heartBeatMap.Load(realRoom); ok && (lastTime.(time.Time)).Equal(lastListen) {
+		log.Warnf("房間 %v 在一分鐘後依然沒有收到新的 HeartBeat, 已強制終止目前的監聽。", realRoom)
+		stop() // 調用中止監聽
+	}
 }
 
 func shortDur(d time.Duration) string {

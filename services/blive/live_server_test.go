@@ -2,10 +2,10 @@ package blive
 
 import (
 	"context"
-	live "github.com/eric2788/biligo-live"
 	"github.com/eric2788/biligo-live-ws/services/database"
 	"github.com/eric2788/biligo-live-ws/services/subscriber"
 	"github.com/go-playground/assert/v2"
+	live "github.com/iyear/biligo-live"
 	"github.com/sirupsen/logrus"
 	"sync"
 	"testing"

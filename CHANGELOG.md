@@ -4,3 +4,5 @@
 更新記錄：
 
 - 迸發處理訊息
+- biligo-live 改回原作者的 library
+- 新增一分鐘後收不到 heartbeat 自動斷線

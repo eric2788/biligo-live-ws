@@ -2,8 +2,8 @@ package blive
 
 import (
 	"context"
-	live "github.com/eric2788/biligo-live"
 	"github.com/eric2788/biligo-live-ws/services/subscriber"
+	live "github.com/iyear/biligo-live"
 	"github.com/sirupsen/logrus"
 	"sync"
 	"time"
