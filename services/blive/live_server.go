@@ -154,6 +154,8 @@ func LaunchLiveServer(
 		enteredRooms.Add(realRoom)
 		defer enteredRooms.Remove(realRoom)
 
+		hbCtx, hbCancel := context.WithCancel(ctx)
+
 		for {
 			select {
 			case tp := <-live.Rev:
@@ -181,11 +183,12 @@ func LaunchLiveServer(
 
 				// 記錄上一次接收到 Heartbeat 的時間
 				if _, ok := tp.Msg.(*biligo.MsgHeartbeatReply); ok {
-					go listenHeatBeatExpire(realRoom, time.Now(), stop)
+					go listenHeartBeatExpire(realRoom, time.Now(), stop, hbCtx)
 				}
 
 			case <-ctx.Done():
 				log.Infof("房間 %v 監聽中止。\n", realRoom)
+				hbCancel()
 				finished(nil, nil)
 				if realRoom != room {
 					listening.Remove(realRoom)
@@ -205,9 +208,14 @@ func LaunchLiveServer(
 	finished(stop, nil)
 }
 
-func listenHeatBeatExpire(realRoom int64, lastListen time.Time, stop context.CancelFunc) {
+func listenHeartBeatExpire(realRoom int64, lastListen time.Time, stop context.CancelFunc, ctx context.Context) {
 	heartBeatMap.Store(realRoom, lastListen)
-	<-time.After(time.Minute)
+	select {
+	case <-time.After(time.Minute):
+		break
+	case <-ctx.Done(): // 已終止監聽
+		return
+	}
 	// 一分鐘後 heartbeat 依然相同
 	if lastTime, ok := heartBeatMap.Load(realRoom); ok && (lastTime.(time.Time)).Equal(lastListen) {
 		log.Warnf("房間 %v 在一分鐘後依然沒有收到新的 HeartBeat, 已強制終止目前的監聽。", realRoom)
