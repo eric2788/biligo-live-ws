@@ -155,6 +155,8 @@ func LaunchLiveServer(
 		defer enteredRooms.Remove(realRoom)
 
 		hbCtx, hbCancel := context.WithCancel(ctx)
+		// 在啟動監聽前先啟動一次heartbeat監聽
+		go listenHeartBeatExpire(realRoom, time.Now(), stop, hbCtx)
 
 		for {
 			select {
