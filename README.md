@@ -24,8 +24,8 @@
 
 目前的公共 API 地址: 
 
-- https://blive.ericlamm.xyz/ (位置: 香港)
-- https://blive-jp.ericlamm.xyz/ (位置: 东京)
+- https://blive.ericlamm.xyz/ (位置: 东京 DigitalOcean)
+- https://blive-jp.ericlamm.xyz/ (位置: 东京 Oracle)
 
 执行 GET / 后 显示
 
