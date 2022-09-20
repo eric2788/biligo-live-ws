@@ -12,5 +12,6 @@ func getWithAgent(url string, args ...interface{}) (*http.Response, error) {
 		return nil, err
 	}
 	req.Header.Set("User-Agent", uarand.GetRandom())
+	log.Debugf("Using User-Agent: %v", req.Header.Get("User-Agent"))
 	return http.DefaultClient.Do(req)
 }

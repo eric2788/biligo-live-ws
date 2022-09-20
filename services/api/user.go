@@ -66,6 +66,12 @@ func GetUserInfo(uid int64, forceUpdate bool) (*UserInfo, error) {
 	}
 
 	if xResp.Code != 0 {
+
+		if xResp.Code == -401 {
+			log.Warnf("User-Agent blocked, retrying...")
+			return GetUserInfo(uid, forceUpdate)
+		}
+
 		return &UserInfo{XResp: xResp}, nil
 	}
 

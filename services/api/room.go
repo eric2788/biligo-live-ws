@@ -70,6 +70,12 @@ func GetRoomInfoWithOption(room int64, forceUpdate bool) (*RoomInfo, error) {
 	}
 
 	if v1resp.Code != 0 {
+
+		if v1resp.Code == -401 {
+			log.Warnf("User-Agent blocked, retrying...")
+			return GetRoomInfoWithOption(room, forceUpdate)
+		}
+
 		return &RoomInfo{V1Resp: v1resp}, nil
 	}
 
