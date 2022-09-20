@@ -8,7 +8,6 @@ import (
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/util"
 	"io"
-	"net/http"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -48,7 +47,7 @@ func GetWebSocketInfo(roomId int64, forceUpdate bool) (*WebSocketInfo, error) {
 		}
 	}
 
-	resp, err := http.Get(fmt.Sprintf(websocketApi, roomId))
+	resp, err := getWithAgent(websocketApi, roomId)
 	if err != nil {
 		return nil, err
 	}

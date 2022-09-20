@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/eric2788/biligo-live-ws/services/database"
 	"io"
-	"net/http"
 	"strings"
 )
 
@@ -48,7 +47,7 @@ func GetUserInfo(uid int64, forceUpdate bool) (*UserInfo, error) {
 		}
 	}
 
-	resp, err := http.Get(fmt.Sprintf(UserInfoApi, uid))
+	resp, err := getWithAgent(UserInfoApi, uid)
 	if err != nil {
 		return nil, err
 	}

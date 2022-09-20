@@ -6,7 +6,6 @@ import (
 	"github.com/eric2788/biligo-live-ws/services/database"
 	"github.com/sirupsen/logrus"
 	"io"
-	"net/http"
 	"strings"
 )
 
@@ -51,7 +50,7 @@ func GetRoomInfoWithOption(room int64, forceUpdate bool) (*RoomInfo, error) {
 		}
 	}
 
-	resp, err := http.Get(fmt.Sprintf(RoomInfoApi, room))
+	resp, err := getWithAgent(RoomInfoApi, room)
 	if err != nil {
 		return nil, err
 	}
