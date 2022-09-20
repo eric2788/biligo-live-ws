@@ -2,7 +2,7 @@ package api
 
 import (
 	"fmt"
-	browser "github.com/EDDYCJY/fake-useragent"
+	"github.com/corpix/uarand"
 	"net/http"
 )
 
@@ -11,6 +11,6 @@ func getWithAgent(url string, args ...interface{}) (*http.Response, error) {
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("User-Agent", browser.Random())
+	req.Header.Set("User-Agent", uarand.GetRandom())
 	return http.DefaultClient.Do(req)
 }

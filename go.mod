@@ -3,29 +3,27 @@ module github.com/eric2788/biligo-live-ws
 go 1.17
 
 require (
+	github.com/corpix/uarand v0.2.0
 	github.com/deckarep/golang-set v1.7.1
 	github.com/gin-contrib/cors v1.3.1
 	github.com/gin-gonic/gin v1.7.7
 	github.com/go-ping/ping v1.0.0
 	github.com/go-playground/assert/v2 v2.0.1
 	github.com/gorilla/websocket v1.5.0
+	github.com/iyear/biligo-live v0.1.3
 	github.com/kr/pretty v0.3.0
 	github.com/sirupsen/logrus v1.8.1
 	github.com/syndtr/goleveldb v1.0.0
 )
 
 require (
-	github.com/EDDYCJY/fake-useragent v0.2.0 // indirect
-	github.com/PuerkitoBio/goquery v1.8.0 // indirect
 	github.com/andybalholm/brotli v1.0.4 // indirect
-	github.com/andybalholm/cascadia v1.3.1 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/go-playground/locales v0.14.0 // indirect
 	github.com/go-playground/universal-translator v0.18.0 // indirect
 	github.com/go-playground/validator/v10 v10.9.0 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/golang/snappy v0.0.0-20180518054509-2e65f85255db // indirect
-	github.com/iyear/biligo-live v0.1.3 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/leodido/go-urn v1.2.1 // indirect
