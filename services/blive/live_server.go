@@ -3,10 +3,12 @@ package blive
 import (
 	"context"
 	"errors"
+	"github.com/corpix/uarand"
 	set "github.com/deckarep/golang-set"
+	biligo "github.com/eric2788/biligo-live"
 	"github.com/eric2788/biligo-live-ws/services/api"
 	"github.com/gorilla/websocket"
-	biligo "github.com/iyear/biligo-live"
+	"net/http"
 	"os"
 	"strings"
 	"sync"
@@ -130,7 +132,11 @@ func LaunchLiveServer(
 
 	log.Debugf("[%v] 正在連接到彈幕伺服器...", room)
 
-	if err := live.Conn(websocket.DefaultDialer, wsHost); err != nil {
+	// 偽造 User-Agent 請求
+	header := http.Header{}
+	header.Set("User-Agent", uarand.GetRandom())
+
+	if err := live.ConnWithHeader(websocket.DefaultDialer, wsHost, header); err != nil {
 		log.Warn("連接伺服器時出現錯誤: ", err)
 		finished(nil, err)
 		return
