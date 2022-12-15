@@ -41,7 +41,7 @@ func SubscribedRoomTracker(handleWs func(int64, *LiveInfo, live.Msg)) {
 				continue
 			}
 
-			room := toListen.(int64)
+			room := toListen
 
 			log.Info("正在啟動監聽房間: ", room)
 
@@ -55,7 +55,7 @@ func SubscribedRoomTracker(handleWs func(int64, *LiveInfo, live.Msg)) {
 					} else {
 						listening.Remove(room)
 						if short, ok := ShortRoomMap.Load(room); ok {
-							shortRoomListening.Remove(short)
+							shortRoomListening.Remove(short.(int64))
 						}
 						log.Debugf("已移除房間 %v 的監聽狀態", room)
 					}
@@ -70,7 +70,7 @@ func SubscribedRoomTracker(handleWs func(int64, *LiveInfo, live.Msg)) {
 		}
 
 		for toStop := range listening.Difference(rooms).Iter() {
-			room := toStop.(int64)
+			room := toStop
 
 			if stop, ok := stopMap.LoadAndDelete(room); ok {
 				log.Info("正在中止監聽房間: ", room)

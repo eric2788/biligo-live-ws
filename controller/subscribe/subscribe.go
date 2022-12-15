@@ -1,7 +1,7 @@
 package subscribe
 
 import (
-	mapset "github.com/deckarep/golang-set"
+	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/eric2788/biligo-live-ws/services/api"
 	"github.com/eric2788/biligo-live-ws/services/subscriber"
 	"github.com/gin-gonic/gin"
@@ -101,7 +101,7 @@ func GetSubscribesArr(c *gin.Context, checkExist bool) ([]int64, bool) {
 		return nil, false
 	}
 
-	roomSet := mapset.NewSet()
+	roomSet := mapset.NewSet[int64]()
 
 	for _, arr := range subArr {
 
@@ -138,7 +138,7 @@ func GetSubscribesArr(c *gin.Context, checkExist bool) ([]int64, bool) {
 	rooms := make([]int64, len(roomArr))
 
 	for i, v := range roomArr {
-		rooms[i] = v.(int64)
+		rooms[i] = v
 	}
 
 	return rooms, true

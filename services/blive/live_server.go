@@ -4,7 +4,8 @@ import (
 	"context"
 	"errors"
 	"github.com/corpix/uarand"
-	set "github.com/deckarep/golang-set"
+	set "github.com/deckarep/golang-set/v2"
+
 	biligo "github.com/eric2788/biligo-live"
 	"github.com/eric2788/biligo-live-ws/services/api"
 	"github.com/gorilla/websocket"
@@ -16,13 +17,13 @@ import (
 )
 
 var (
-	listening          = set.NewSet()
-	shortRoomListening = set.NewSet()
-	excepted           = set.NewSet()
-	liveFetch          = set.NewSet()
-	coolingDown        = set.NewSet()
+	listening          = set.NewSet[int64]()
+	shortRoomListening = set.NewSet[int64]()
+	excepted           = set.NewSet[int64]()
+	liveFetch          = set.NewSet[int64]()
+	coolingDown        = set.NewSet[int64]()
 
-	enteredRooms = set.NewSet()
+	enteredRooms = set.NewSet[int64]()
 
 	ShortRoomMap = sync.Map{}
 
@@ -34,15 +35,15 @@ var (
 	ErrTooFast  = errors.New("請求頻繁")
 )
 
-func GetExcepted() []interface{} {
+func GetExcepted() []int64 {
 	return excepted.ToSlice()
 }
 
-func GetEntered() []interface{} {
+func GetEntered() []int64 {
 	return enteredRooms.ToSlice()
 }
 
-func GetListening() []interface{} {
+func GetListening() []int64 {
 	return listening.ToSlice()
 }
 
