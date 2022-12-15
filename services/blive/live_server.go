@@ -28,6 +28,14 @@ var (
 	ShortRoomMap = sync.Map{}
 
 	heartBeatMap = sync.Map{}
+
+	dialer = &websocket.Dialer{
+		HandshakeTimeout:  30 * time.Second,
+		Proxy:             http.ProxyFromEnvironment,
+		EnableCompression: true,
+		ReadBufferSize:    1024,
+		WriteBufferSize:   1024,
+	}
 )
 
 var (
@@ -137,7 +145,7 @@ func LaunchLiveServer(
 	header := http.Header{}
 	header.Set("User-Agent", uarand.GetRandom())
 
-	if err := live.ConnWithHeader(websocket.DefaultDialer, wsHost, header); err != nil {
+	if err := live.ConnWithHeader(dialer, wsHost, header); err != nil {
 		log.Warn("連接伺服器時出現錯誤: ", err)
 		finished(nil, err)
 		return
