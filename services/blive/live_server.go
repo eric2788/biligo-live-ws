@@ -104,7 +104,7 @@ func LaunchLiveServer(
 
 	}
 
-	live := biligo.NewLive(false, 30*time.Second, 2048, func(err error) {
+	live := biligo.NewLive(false, 30*time.Second, 0, func(err error) {
 		log.Error(err)
 	})
 
