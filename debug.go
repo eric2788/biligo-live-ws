@@ -3,6 +3,7 @@ package main
 import (
 	log "github.com/sirupsen/logrus"
 	"net/http"
+	_ "net/http/pprof"
 )
 
 func debugServe() {
