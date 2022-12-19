@@ -29,7 +29,12 @@ var (
 
 	ShortRoomMap = sync.Map{}
 
-	heartBeatMap = sync.Map{}
+	dialer = &websocket.Dialer{
+		HandshakeTimeout: 30 * time.Second,
+		Proxy:            http.ProxyFromEnvironment,
+		ReadBufferSize:   1024,
+		WriteBufferSize:  1024,
+	}
 )
 
 var (
@@ -139,7 +144,7 @@ func LaunchLiveServer(
 	header := http.Header{}
 	header.Set("User-Agent", uarand.GetRandom())
 
-	if err := live.ConnWithHeader(websocket.DefaultDialer, wsHost, header); err != nil {
+	if err := live.ConnWithHeader(dialer, wsHost, header); err != nil {
 		log.Warn("連接伺服器時出現錯誤: ", err)
 		finished(nil, err)
 		return
@@ -165,7 +170,7 @@ func LaunchLiveServer(
 
 		hbCtx, hbCancel := context.WithCancel(ctx)
 		// 在啟動監聽前先啟動一次heartbeat監聽
-		go listenHeartBeatExpire(realRoom, time.Now(), stop, hbCtx)
+		go listenHeartBeatExpire(realRoom, stop, hbCtx)
 
 		for {
 			select {
@@ -183,8 +188,12 @@ func LaunchLiveServer(
 						log.Infof("房間 %v 開播，正在更新直播資訊...\n", realRoom)
 						// 更新一次直播资讯
 						UpdateLiveInfo(liveInfo, realRoom)
-						// 更新一次 WebSocket 資訊
-						go api.UpdateLowLatencyHost(realRoom)
+
+						if os.Getenv("BILI_WS_HOST_FORCE") != "" {
+							// 更新一次 WebSocket 資訊
+							go api.UpdateLowLatencyHost(realRoom)
+						}
+
 					}
 
 					// 但開播指令推送多次保留
@@ -194,7 +203,9 @@ func LaunchLiveServer(
 
 				// 記錄上一次接收到 Heartbeat 的時間
 				if _, ok := tp.Msg.(*biligo.MsgHeartbeatReply); ok {
-					go listenHeartBeatExpire(realRoom, time.Now(), stop, hbCtx)
+					hbCancel()                                // 终止先前的心跳监听
+					hbCtx, hbCancel = context.WithCancel(ctx) // reassign new hb context
+					go listenHeartBeatExpire(realRoom, stop, hbCtx)
 				}
 
 			case <-ctx.Done():
@@ -219,8 +230,7 @@ func LaunchLiveServer(
 	finished(stop, nil)
 }
 
-func listenHeartBeatExpire(realRoom int64, lastListen time.Time, stop context.CancelFunc, ctx context.Context) {
-	heartBeatMap.Store(realRoom, lastListen)
+func listenHeartBeatExpire(realRoom int64, stop context.CancelFunc, ctx context.Context) {
 	select {
 	case <-time.After(time.Minute):
 		break
@@ -228,10 +238,8 @@ func listenHeartBeatExpire(realRoom int64, lastListen time.Time, stop context.Ca
 		return
 	}
 	// 一分鐘後 heartbeat 依然相同
-	if lastTime, ok := heartBeatMap.Load(realRoom); ok && (lastTime.(time.Time)).Equal(lastListen) {
-		log.Warnf("房間 %v 在一分鐘後依然沒有收到新的 HeartBeat, 已強制終止目前的監聽。", realRoom)
-		stop() // 調用中止監聽
-	}
+	log.Warnf("房間 %v 在一分鐘後依然沒有收到新的 HeartBeat, 已強制終止目前的監聽。", realRoom)
+	stop() // 調用中止監聽
 }
 
 func shortDur(d time.Duration) string {

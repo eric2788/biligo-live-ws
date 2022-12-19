@@ -3,15 +3,16 @@ package websocket
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"sync"
+	"time"
+
 	live "github.com/eric2788/biligo-live"
 	"github.com/eric2788/biligo-live-ws/services/blive"
 	"github.com/eric2788/biligo-live-ws/services/subscriber"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
-	"net/http"
-	"sync"
-	"time"
 )
 
 var (
@@ -35,6 +36,8 @@ func OpenWebSocket(c *gin.Context) {
 		CheckOrigin: func(r *http.Request) bool {
 			return true
 		},
+		ReadBufferSize:  1024,
+		WriteBufferSize: 1024,
 	}
 
 	// 獲取辨識 Id
