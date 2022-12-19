@@ -3,17 +3,19 @@ package blive
 import (
 	"context"
 	"errors"
+
 	"github.com/corpix/uarand"
 	set "github.com/deckarep/golang-set/v2"
 
-	biligo "github.com/eric2788/biligo-live"
-	"github.com/eric2788/biligo-live-ws/services/api"
-	"github.com/gorilla/websocket"
 	"net/http"
 	"os"
 	"strings"
 	"sync"
 	"time"
+
+	biligo "github.com/eric2788/biligo-live"
+	"github.com/eric2788/biligo-live-ws/services/api"
+	"github.com/gorilla/websocket"
 )
 
 var (
@@ -28,14 +30,6 @@ var (
 	ShortRoomMap = sync.Map{}
 
 	heartBeatMap = sync.Map{}
-
-	dialer = &websocket.Dialer{
-		HandshakeTimeout:  30 * time.Second,
-		Proxy:             http.ProxyFromEnvironment,
-		EnableCompression: true,
-		ReadBufferSize:    1024,
-		WriteBufferSize:   1024,
-	}
 )
 
 var (
@@ -113,7 +107,7 @@ func LaunchLiveServer(
 
 	}
 
-	live := biligo.NewLive(false, 30*time.Second, 0, func(err error) {
+	live := biligo.NewLive(false, 30*time.Second, 1, func(err error) {
 		log.Error(err)
 	})
 
@@ -145,7 +139,7 @@ func LaunchLiveServer(
 	header := http.Header{}
 	header.Set("User-Agent", uarand.GetRandom())
 
-	if err := live.ConnWithHeader(dialer, wsHost, header); err != nil {
+	if err := live.ConnWithHeader(websocket.DefaultDialer, wsHost, header); err != nil {
 		log.Warn("連接伺服器時出現錯誤: ", err)
 		finished(nil, err)
 		return

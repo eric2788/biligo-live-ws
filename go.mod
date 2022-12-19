@@ -5,7 +5,7 @@ go 1.19
 require (
 	github.com/corpix/uarand v0.2.0
 	github.com/deckarep/golang-set/v2 v2.1.0
-	github.com/eric2788/biligo-live v0.1.4-SNAPSHOT.0.20221215063649-d1c1b9d205cd
+	github.com/eric2788/biligo-live v0.1.4-alpha.4
 	github.com/gin-contrib/cors v1.4.0
 	github.com/gin-gonic/gin v1.8.1
 	github.com/go-ping/ping v1.1.0
@@ -23,7 +23,6 @@ require (
 	github.com/go-playground/universal-translator v0.18.0 // indirect
 	github.com/go-playground/validator/v10 v10.11.1 // indirect
 	github.com/goccy/go-json v0.10.0 // indirect
-	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/go-cmp v0.5.8 // indirect
 	github.com/google/uuid v1.3.0 // indirect

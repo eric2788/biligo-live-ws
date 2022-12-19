@@ -99,7 +99,7 @@ type UserInfoData struct {
 	Sign     string `json:"sign"`
 	Rank     int    `json:"rank"`
 	Level    int8   `json:"level"`
-	Official struct {
+	Official *struct {
 		Role  int    `json:"role"`
 		Desc  string `json:"desc"`
 		Title string `json:"title"`
