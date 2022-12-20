@@ -238,7 +238,7 @@ func listenHeartBeatExpire(realRoom int64, stop context.CancelFunc, ctx context.
 		return
 	}
 	// 一分鐘後 heartbeat 依然相同
-	log.Warnf("房間 %v 在一分鐘後依然沒有收到新的 HeartBeat, 已強制終止目前的監聽。", realRoom)
+	log.Warnf("房間 %v 在三分鐘後依然沒有收到新的 HeartBeat, 已強制終止目前的監聽。", realRoom)
 	stop() // 調用中止監聽
 }
 
