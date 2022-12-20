@@ -28,7 +28,6 @@ func (d *Dynamic) GetFromDB(key string, arg interface{}) error {
 	d.lock.Lock()
 	defer d.lock.Unlock()
 	db, err := leveldb.OpenFile(DbPath, &opt.Options{
-		NoSync:   true,
 		ReadOnly: true,
 	})
 	if err != nil {
@@ -70,15 +69,30 @@ func (d *Dynamic) PutToDB(key string, value interface{}) error {
 		log.Warn("Error encoding value:", err)
 		return err
 	}
-	return d.UpdateDB(func(db *leveldb.Transaction) error {
-		return db.Put([]byte(key), b, nil)
-	})
+	d.lock.Lock()
+	defer d.lock.Unlock()
+	db, err := leveldb.OpenFile(DbPath, nil)
+	if err != nil {
+		log.Warn("開啟數據庫時出現錯誤:", err)
+		return err
+	}
+	defer func() {
+		if err := db.Close(); err != nil {
+			log.Debug("關閉數據庫時出現錯誤:", err)
+		}
+	}()
+	err = db.Put([]byte(key), b, nil)
+	if err != nil {
+		log.Warn("更新數據庫時出現錯誤: ", err)
+		return err
+	}
+	return nil
 }
 
 func (d *Dynamic) UpdateDB(update func(db *leveldb.Transaction) error) error {
 	d.lock.Lock()
 	defer d.lock.Unlock()
-	db, err := leveldb.OpenFile(DbPath, &opt.Options{NoSync: true})
+	db, err := leveldb.OpenFile(DbPath, nil)
 	if err != nil {
 		log.Warn("開啟數據庫時出現錯誤:", err)
 		return err
