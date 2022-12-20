@@ -112,7 +112,7 @@ func LaunchLiveServer(
 
 	}
 
-	live := biligo.NewLive(false, 30*time.Second, 1, func(err error) {
+	live := biligo.NewLive(false, 30*time.Second, 100, func(err error) {
 		log.Error(err)
 	})
 
@@ -232,7 +232,7 @@ func LaunchLiveServer(
 
 func listenHeartBeatExpire(realRoom int64, stop context.CancelFunc, ctx context.Context) {
 	select {
-	case <-time.After(time.Minute):
+	case <-time.After(time.Minute * 3):
 		break
 	case <-ctx.Done(): // 已終止監聽
 		return
