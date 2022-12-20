@@ -2,14 +2,15 @@ package blive
 
 import (
 	"context"
+	"sync"
+	"testing"
+	"time"
+
 	live "github.com/eric2788/biligo-live"
 	"github.com/eric2788/biligo-live-ws/services/database"
 	"github.com/eric2788/biligo-live-ws/services/subscriber"
 	"github.com/go-playground/assert/v2"
 	"github.com/sirupsen/logrus"
-	"sync"
-	"testing"
-	"time"
 )
 
 func TestGetLiveInfo(t *testing.T) {
@@ -53,6 +54,13 @@ func TestLaunchLiveServer(t *testing.T) {
 	<-time.After(time.Second * 15)
 	cancel()
 	<-time.After(time.Second * 3)
+}
+
+func TestTimer(t *testing.T) {
+	timer := time.NewTimer(time.Second * 5)
+	defer timer.Stop()
+	<-timer.C
+	t.Log("done")
 }
 
 func init() {

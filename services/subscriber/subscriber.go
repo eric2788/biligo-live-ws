@@ -27,11 +27,11 @@ func Update(identifier string, rooms []int64) {
 	}()
 }
 
-func ExpireAfter(identifier string, expired <-chan time.Time) {
-	ExpireAfterWithCheck(identifier, expired, true)
+func ExpireAfter(identifier string, timer *time.Timer) {
+	ExpireAfterWithCheck(identifier, timer, true)
 }
 
-func ExpireAfterWithCheck(identifier string, expired <-chan time.Time, checkExist bool) {
+func ExpireAfterWithCheck(identifier string, timer *time.Timer, checkExist bool) {
 
 	// 保險起見
 	if _, subBefore := subscribeMap.Load(identifier); subBefore && checkExist {
@@ -46,9 +46,10 @@ func ExpireAfterWithCheck(identifier string, expired <-chan time.Time, checkExis
 	connected := make(chan struct{})
 
 	go func() {
+		defer timer.Stop()
 		for {
 			select {
-			case <-expired:
+			case <-timer.C:
 				// 保險起見
 				if _, ok := expireMap.LoadAndDelete(identifier); !ok {
 					return

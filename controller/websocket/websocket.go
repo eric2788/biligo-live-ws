@@ -36,6 +36,8 @@ func OpenWebSocket(c *gin.Context) {
 		CheckOrigin: func(r *http.Request) bool {
 			return true
 		},
+		ReadBufferSize:  512,
+		WriteBufferSize: 512,
 	}
 
 	// 獲取辨識 Id
@@ -171,7 +173,7 @@ func HandleClose(identifier string) {
 	websocketTable.Delete(identifier)
 	// 等待五分鐘，如果五分鐘後沒有重連則刪除訂閱記憶
 	// 由於斷線的時候已經有訂閱列表，因此此方法不會檢查是否有訂閱列表
-	subscriber.ExpireAfterWithCheck(identifier, time.After(time.Minute*5), false)
+	subscriber.ExpireAfterWithCheck(identifier, time.NewTimer(time.Minute*5), false)
 }
 
 type BLiveData struct {

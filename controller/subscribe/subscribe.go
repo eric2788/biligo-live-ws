@@ -1,13 +1,14 @@
 package subscribe
 
 import (
+	"strconv"
+	"time"
+
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/eric2788/biligo-live-ws/services/api"
 	"github.com/eric2788/biligo-live-ws/services/subscriber"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
-	"strconv"
-	"time"
 )
 
 var (
@@ -148,6 +149,6 @@ func ActivateExpire(identifier string) {
 	// 如果之前尚未有過訂閱 (即新增而不是更新)
 	if _, subBefore := subscriber.Get(identifier); !subBefore {
 		// 設置如果五分鐘後尚未連線 WebSocket 就清除訂閱記憶
-		subscriber.ExpireAfter(identifier, time.After(time.Minute*5))
+		subscriber.ExpireAfter(identifier, time.NewTimer(time.Minute*5))
 	}
 }

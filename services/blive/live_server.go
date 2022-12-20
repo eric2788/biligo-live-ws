@@ -231,13 +231,15 @@ func LaunchLiveServer(
 }
 
 func listenHeartBeatExpire(realRoom int64, stop context.CancelFunc, ctx context.Context) {
+	timer := time.NewTimer(time.Minute * 3)
+	defer timer.Stop()
 	select {
-	case <-time.After(time.Minute * 3):
+	case <-timer.C:
 		break
 	case <-ctx.Done(): // 已終止監聽
 		return
 	}
-	// 一分鐘後 heartbeat 依然相同
+	// 三分鐘後 heartbeat 依然相同
 	log.Warnf("房間 %v 在三分鐘後依然沒有收到新的 HeartBeat, 已強制終止目前的監聽。", realRoom)
 	stop() // 調用中止監聽
 }

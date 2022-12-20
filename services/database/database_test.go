@@ -5,10 +5,11 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/sirupsen/logrus"
 )
 
 func TestGetFromDBConcurrent(t *testing.T) {
-
 	for i := 0; i < 10; i++ {
 		i := i
 		go func() {
@@ -22,15 +23,15 @@ func TestGetFromDBConcurrent(t *testing.T) {
 }
 
 func BenchmarkPutToDB(b *testing.B) {
-	/*b.Log("PutToDB")
+	b.Log("PutToDB")
 	for i := 0; i < b.N; i++ {
 		PutToDB(fmt.Sprintf("test:%v", i), i)
 	}
-	*/
+
 	b.Log("GetFromDB")
-	for i := 0; i < 10; i++ {
+	for i := 0; i < b.N; i++ {
 		var j int
-		GetFromDB(fmt.Sprintf("test:%v", 4000), &j)
+		GetFromDB(fmt.Sprintf("test:%v", i), &j)
 	}
 
 }
@@ -86,6 +87,7 @@ func TestPutToDBAndGetFromDB(t *testing.T) {
 }
 
 func init() {
-	//logrus.SetLevel(logrus.DebugLevel)
+	strategy = &Dynamic{}
+	logrus.SetLevel(logrus.DebugLevel)
 	_ = StartDB()
 }
