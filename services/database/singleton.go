@@ -24,15 +24,7 @@ func (s *Singleton) CloseDB() error {
 }
 
 func (s *Singleton) GetFromDB(key string, arg interface{}) error {
-	transaction, err := s.level.OpenTransaction()
-	if err != nil {
-		log.Warn("開啟 transaction 時出現錯誤:", err)
-		return err
-	}
-
-	defer closeTransWithLog(transaction)
-
-	value, err := transaction.Get([]byte(key), nil)
+	value, err := s.level.Get([]byte(key), nil)
 
 	if err != nil && err != leveldb.ErrNotFound {
 		log.Warn("從數據庫獲取數值時出現錯誤:", err)
@@ -57,17 +49,7 @@ func (s *Singleton) PutToDB(key string, value interface{}) error {
 		log.Warn("Error encoding value:", err)
 		return err
 	}
-
-	trans, err := s.level.OpenTransaction()
-
-	if err != nil {
-		log.Warn("開啟 transaction 時出現錯誤:", err)
-		return err
-	}
-
-	defer closeTransWithLog(trans)
-
-	return trans.Put([]byte(key), b, nil)
+	return s.level.Put([]byte(key), b, nil)
 }
 
 func (s *Singleton) UpdateDB(update func(db *leveldb.Transaction) error) error {
