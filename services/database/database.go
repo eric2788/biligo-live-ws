@@ -37,6 +37,8 @@ func init() {
 	switch strings.ToLower(t) {
 	case "dynamic":
 		strategy = &Dynamic{}
+	case "mix":
+		strategy = &Mix{}
 	default:
 		strategy = &Singleton{}
 	}

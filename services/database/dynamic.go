@@ -40,16 +40,12 @@ func (d *Dynamic) GetFromDB(key string, arg interface{}) error {
 		}
 	}()
 
-	log.Debugf("開始讀取數據庫: %v", key)
-
 	value, err := db.Get([]byte(key), nil)
 
 	if err != nil && err != leveldb.ErrNotFound {
 		log.Warn("從數據庫獲取數值時出現錯誤:", err)
 		return err
 	}
-
-	log.Debugf("讀取數據庫完成: %v", key)
 
 	// empty value
 	if err == leveldb.ErrNotFound || value == nil || len(value) == 0 {
