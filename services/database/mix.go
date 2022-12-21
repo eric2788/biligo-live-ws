@@ -93,10 +93,7 @@ func (m *Mix) UpdateDB(update func(db *leveldb.Transaction) error) error {
 }
 
 func (m *Mix) removeAlive() {
-	go func() {
-		<-time.After(time.Second)
-		m.alive.Add(-1)
-	}()
+	m.alive.Add(-1)
 }
 
 func (m *Mix) initDB() error {
