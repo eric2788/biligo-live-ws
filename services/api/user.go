@@ -4,9 +4,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/eric2788/biligo-live-ws/services/database"
 	"io"
 	"strings"
+
+	"github.com/eric2788/biligo-live-ws/services/database"
 )
 
 const UserInfoApi = "https://api.bilibili.com/x/space/acc/info?mid=%v&jsonp=jsonp"
@@ -66,12 +67,6 @@ func GetUserInfo(uid int64, forceUpdate bool) (*UserInfo, error) {
 	}
 
 	if xResp.Code != 0 {
-
-		if xResp.Code == -401 {
-			log.Warnf("User-Agent blocked, retrying...")
-			return GetUserInfo(uid, forceUpdate)
-		}
-
 		return &UserInfo{XResp: xResp}, nil
 	}
 

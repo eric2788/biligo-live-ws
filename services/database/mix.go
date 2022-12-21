@@ -35,7 +35,7 @@ func (m *Mix) GetFromDB(key string, arg interface{}) error {
 	}
 
 	m.alive.Add(1)
-	defer m.alive.Add(-1)
+	defer m.removeAlive()
 
 	value, err := m.level.Get([]byte(key), nil)
 
@@ -66,7 +66,7 @@ func (m *Mix) PutToDB(key string, value interface{}) error {
 		return err
 	}
 	m.alive.Add(1)
-	defer m.alive.Add(-1)
+	defer m.removeAlive()
 	return m.level.Put([]byte(key), b, nil)
 }
 
@@ -81,7 +81,7 @@ func (m *Mix) UpdateDB(update func(db *leveldb.Transaction) error) error {
 	}
 
 	m.alive.Add(1)
-	defer m.alive.Add(-1)
+	defer m.removeAlive()
 	defer closeTransWithLog(db)
 
 	err = update(db)
@@ -90,6 +90,13 @@ func (m *Mix) UpdateDB(update func(db *leveldb.Transaction) error) error {
 		return err
 	}
 	return nil
+}
+
+func (m *Mix) removeAlive() {
+	go func() {
+		<-time.After(time.Second)
+		m.alive.Add(-1)
+	}()
 }
 
 func (m *Mix) initDB() error {

@@ -2,12 +2,15 @@ package api
 
 import (
 	"encoding/json"
-	"github.com/eric2788/biligo-live-ws/services/database"
-	"github.com/go-playground/assert/v2"
-	"github.com/syndtr/goleveldb/leveldb"
-	"github.com/syndtr/goleveldb/leveldb/util"
 	"strings"
 	"testing"
+	"time"
+
+	"github.com/eric2788/biligo-live-ws/services/database"
+	"github.com/go-playground/assert/v2"
+	"github.com/kr/pretty"
+	"github.com/syndtr/goleveldb/leveldb"
+	"github.com/syndtr/goleveldb/leveldb/util"
 )
 
 func TestGetRoomInfo(t *testing.T) {
@@ -62,6 +65,29 @@ func TestGetUserInfo(t *testing.T) {
 	} else {
 		t.Fatal(err)
 	}
+}
+
+func TestGetUserAgent(t *testing.T) {
+	info, err := GetRoomInfoWithOption(545, true)
+	if err != nil {
+		t.Skip(err)
+	}
+
+	pretty.Println(info)
+}
+
+var a = &RoomInfoData{
+	ShortId: 545,
+}
+
+func TestChangeWithGo(t *testing.T) {
+	go func() {
+		a.ShortId = 546
+	}()
+
+	t.Log(a.ShortId)
+	<-time.After(time.Second)
+	t.Log(a.ShortId)
 }
 
 func init() {
