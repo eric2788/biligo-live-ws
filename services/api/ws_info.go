@@ -3,14 +3,15 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/eric2788/biligo-live-ws/services/database"
-	"github.com/go-ping/ping"
-	"github.com/syndtr/goleveldb/leveldb"
-	"github.com/syndtr/goleveldb/leveldb/util"
 	"io"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/eric2788/biligo-live-ws/services/database"
+	"github.com/go-ping/ping"
+	"github.com/syndtr/goleveldb/leveldb"
+	"github.com/syndtr/goleveldb/leveldb/util"
 )
 
 const websocketApi = "https://api.live.bilibili.com/room/v1/Danmu/getConf?room_id=%v&platform=pc&player=web"
@@ -51,6 +52,8 @@ func GetWebSocketInfo(roomId int64, forceUpdate bool) (*WebSocketInfo, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 
@@ -137,6 +140,7 @@ func getLowLatencyHost(infos []HostServerInfo) string {
 		go func(info HostServerInfo) {
 			defer wg.Done()
 			p, err := ping.NewPinger(info.Host)
+			defer p.Stop()
 			p.Count = 1
 			p.SetPrivileged(true)
 			p.Timeout = time.Second * 5
@@ -185,6 +189,7 @@ type LowPingInfo struct {
 func ResetAllLowLatency() {
 	err := database.UpdateDB(func(db *leveldb.Transaction) error {
 		iter := db.NewIterator(&util.Range{Start: []byte("wsInfo:")}, nil)
+		defer iter.Release()
 		for iter.Next() {
 			var wsInfo = &WebSocketInfo{}
 			if err := json.Unmarshal(iter.Value(), wsInfo); err != nil {
@@ -208,7 +213,6 @@ func ResetAllLowLatency() {
 			}
 
 		}
-		iter.Release()
 		return iter.Error()
 	})
 

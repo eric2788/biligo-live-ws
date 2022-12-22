@@ -22,8 +22,8 @@ func OpenGlobalWebSocket(c *gin.Context) {
 			}
 			return true
 		},
-		ReadBufferSize:  512,
-		WriteBufferSize: 512,
+		ReadBufferSize:  64,
+		WriteBufferSize: 2048,
 	}
 
 	ws, err := upgrader.Upgrade(c.Writer, c.Request, nil)

@@ -3,6 +3,7 @@ package blive
 import (
 	"context"
 	"errors"
+	"math/rand"
 
 	"github.com/corpix/uarand"
 	set "github.com/deckarep/golang-set/v2"
@@ -112,7 +113,7 @@ func LaunchLiveServer(
 
 	}
 
-	live := biligo.NewLive(false, 30*time.Second, 100, func(err error) {
+	live := biligo.NewLive(false, 30*time.Second, 10, func(err error) {
 		log.Error(err)
 	})
 
@@ -156,7 +157,7 @@ func LaunchLiveServer(
 
 	go func() {
 
-		if err := live.Enter(ctx, realRoom, "", 0); err != nil {
+		if err := live.Enter(ctx, realRoom, "", rand.Int63()); err != nil {
 			log.Warnf("監聽房間 %v 時出現錯誤: %v\n", realRoom, err)
 			stop()
 		}

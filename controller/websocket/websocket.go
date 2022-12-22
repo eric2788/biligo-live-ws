@@ -36,8 +36,8 @@ func OpenWebSocket(c *gin.Context) {
 		CheckOrigin: func(r *http.Request) bool {
 			return true
 		},
-		ReadBufferSize:  512,
-		WriteBufferSize: 512,
+		ReadBufferSize:  64,
+		WriteBufferSize: 2048,
 	}
 
 	// 獲取辨識 Id
