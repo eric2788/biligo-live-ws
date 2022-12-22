@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 	"math/rand"
+	"strconv"
 
-	"github.com/corpix/uarand"
 	set "github.com/deckarep/golang-set/v2"
 
 	"net/http"
@@ -143,7 +143,9 @@ func LaunchLiveServer(
 
 	// 偽造 User-Agent 請求
 	header := http.Header{}
-	header.Set("User-Agent", uarand.GetRandom())
+	header.Set("Origin", "https://live.bilibili.com")
+	header.Set("Referer", "https://live.bilibili.com/"+strconv.FormatInt(realRoom, 10))
+	header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
 
 	if err := live.ConnWithHeader(dialer, wsHost, header); err != nil {
 		log.Warn("連接伺服器時出現錯誤: ", err)

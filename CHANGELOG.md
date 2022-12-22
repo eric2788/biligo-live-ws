@@ -3,6 +3,7 @@
 
 更新記錄：
 
-- 迸發處理訊息
-- biligo-live 改回原作者的 library
-- 新增一分鐘後收不到 heartbeat 自動斷線
+- 修复 goroutine leaks 导致的内存泄漏
+- heartbeat 自動斷線逾时改为三分钟
+- 优化内存使用量
+- 数据库新增闲置时关闭以进一步减少内存使用量
