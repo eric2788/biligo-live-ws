@@ -42,18 +42,6 @@ func OpenGlobalWebSocket(c *gin.Context) {
 	})
 
 	globalWebSockets.Store(identifier, &WebSocket{ws: ws})
-
-	go func() {
-		for {
-			// 接收客戶端關閉訊息
-			if _, _, err = ws.NextReader(); err != nil {
-				if err := ws.Close(); err != nil {
-					log.Warnf("關閉用戶 %v 的 WebSocket 時發生錯誤: %v", identifier, err)
-				}
-				return
-			}
-		}
-	}()
 }
 
 func writeGlobalMessage(identifier string, socket *WebSocket, data BLiveData) error {

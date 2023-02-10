@@ -2,11 +2,12 @@ package subscriber
 
 import (
 	"fmt"
+	"sync"
+	"time"
+
 	set "github.com/deckarep/golang-set/v2"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
-	"sync"
-	"time"
 )
 
 var (
@@ -43,7 +44,7 @@ func ExpireAfterWithCheck(identifier string, timer *time.Timer, checkExist bool)
 		return
 	}
 
-	connected := make(chan struct{})
+	connected := make(chan struct{}, 1)
 
 	go func() {
 		defer timer.Stop()
@@ -144,20 +145,13 @@ func Add(identifier string, rooms []int64) []int64 {
 }
 
 func UpdateRange[T comparable](res []T, rooms []T, updater func(set.Set[T], T)) []T {
-
 	roomSet := ToSet(res)
 
 	for _, room := range rooms {
 		updater(roomSet, room)
 	}
 
-	roomArr := roomSet.ToSlice()
-	newRooms := make([]T, len(roomArr))
-	for i, room := range roomArr {
-		newRooms[i] = room
-	}
-
-	return newRooms
+	return roomSet.ToSlice()
 }
 
 func Remove(identifier string, rooms []int64) ([]int64, bool) {

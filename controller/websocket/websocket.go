@@ -73,18 +73,6 @@ func OpenWebSocket(c *gin.Context) {
 
 	// 中止五分鐘後清除訂閱記憶
 	subscriber.CancelExpire(identifier)
-
-	go func() {
-		for {
-			// 接收客戶端關閉訊息
-			if _, _, err = ws.NextReader(); err != nil {
-				if err := ws.Close(); err != nil {
-					log.Warnf("關閉用戶 %v 的 WebSocket 時發生錯誤: %v", identifier, err)
-				}
-				return
-			}
-		}
-	}()
 }
 
 func handleBLiveMessage(room int64, info *blive.LiveInfo, msg live.Msg) {
