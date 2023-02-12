@@ -26,8 +26,8 @@ func TestGetLiveInfo(t *testing.T) {
 }
 
 func TestSubscribedRoomTracker(t *testing.T) {
-	subscriber.Add("tester-1", []int64{255, 525, 545, 5424})
-	subscriber.Add("tester-2", []int64{573893, 394681, 48743})
+	subscriber.GetSubscriber("tester-1").AddSubscribes([]int64{255, 525, 545, 5424})
+	subscriber.GetSubscriber("tester-2").AddSubscribes([]int64{573893, 394681, 48743})
 
 	go SubscribedRoomTracker(func(i int64, info *LiveInfo, msg live.Msg) {
 		t.Log(i, msg.Cmd())

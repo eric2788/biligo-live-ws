@@ -3,11 +3,11 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/eric2788/biligo-live-ws/controller/listening"
-	"github.com/eric2788/biligo-live-ws/controller/subscribe"
-	ws "github.com/eric2788/biligo-live-ws/controller/websocket"
+	"github.com/eric2788/biligo-live-ws/controller"
+	"github.com/eric2788/biligo-live-ws/middleware"
 	"github.com/eric2788/biligo-live-ws/services/api"
 	"github.com/eric2788/biligo-live-ws/services/database"
+	"github.com/eric2788/biligo-live-ws/services/subscriber"
 	"github.com/eric2788/biligo-live-ws/services/updater"
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
@@ -17,6 +17,25 @@ import (
 
 var release = flag.Bool("release", os.Getenv("GIN_MODE") == "release", "set release mode")
 var port = flag.Int("port", 8080, "set the websocket port")
+
+func index(c *gin.Context) {
+	c.IndentedJSON(200, gin.H{
+		"status": "working",
+	})
+}
+func validateSubs(c *gin.Context) {
+	subs, ok := subscriber.GetSubscribes(c.GetString("identifier"))
+	if !ok {
+		c.AbortWithStatusJSON(400, gin.H{"error": "尚未訂閱任何的直播房間號"})
+		return
+	}
+	if len(subs) == 0 {
+		c.AbortWithStatusJSON(400, gin.H{"error": "訂閱列表為空"})
+		return
+	}
+
+	c.Status(200)
+}
 
 func main() {
 
@@ -55,15 +74,16 @@ func main() {
 		go api.ResetAllLowLatency()
 	}
 
-	router.Use(CORS())
-	router.Use(ErrorHandler)
+	router.Use(middleware.CORS())
+	router.Use(middleware.Identifier())
+	router.Use(middleware.ErrorHandler())
 
-	router.GET("", Index)
-	router.POST("validate", ValidateProcess)
+	router.GET("", index)
+	router.POST("validate", validateSubs)
 
-	subscribe.Register(router.Group("subscribe"))
-	ws.Register(router.Group("ws"))
-	listening.Register(router.Group("listening"))
+	controller.Subscribe(router.Group("subscribe"))
+	controller.WebSocket(router.Group("ws"))
+	controller.Listening(router.Group("listening"))
 
 	port := fmt.Sprintf(":%d", *port)
 
@@ -79,10 +99,4 @@ func main() {
 	if err := database.CloseDB(); err != nil {
 		log.Errorf("關閉數據庫時錯誤: %v", err)
 	}
-}
-
-func Index(c *gin.Context) {
-	c.IndentedJSON(200, gin.H{
-		"status": "working",
-	})
 }

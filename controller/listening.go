@@ -1,20 +1,17 @@
-package listening
+package controller
 
 import (
 	"github.com/eric2788/biligo-live-ws/services/blive"
 	"github.com/gin-gonic/gin"
-	"github.com/sirupsen/logrus"
 	"strconv"
 )
 
-var log = logrus.WithField("controller", "listening")
-
-func Register(gp *gin.RouterGroup) {
-	gp.GET("", GetListening)
-	gp.GET("/:room_id", GetListenRoom)
+func Listening(gp *gin.RouterGroup) {
+	gp.GET("", getListening)
+	gp.GET("/:room_id", getListenRoom)
 }
 
-func GetListenRoom(c *gin.Context) {
+func getListenRoom(c *gin.Context) {
 
 	id, err := strconv.ParseInt(c.Param("room_id"), 10, 64)
 
@@ -45,7 +42,7 @@ func GetListenRoom(c *gin.Context) {
 	c.IndentedJSON(200, room)
 }
 
-func GetListening(c *gin.Context) {
+func getListening(c *gin.Context) {
 
 	listens := blive.GetEntered()
 

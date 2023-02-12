@@ -1,27 +1,31 @@
 package subscriber
 
 import (
+	"fmt"
 	"testing"
 	"time"
 )
 
-func BenchmarkAdd(b *testing.B) {
+// TestGetAllGlobalSubscribers tests the GetAllGlobalSubscribers function concurrently
+func TestGetAllGlobalSubscribers(t *testing.T) {
 
-	for i := 0; i < 3773; i++ {
-		Add("tester", []int64{int64(i)})
-	}
+	GetSubscriber("test-1").Global = true
+	GetSubscriber("test-2").Global = true
+	GetSubscriber("test-3").Global = true
 
 	go func() {
-		for true {
-			GetAllSubscribers(1)
+		t.Log("get all subscribers: ")
+		<-time.After(time.Second * 2)
+		for id := range GetAllGlobalSubscribers() {
+			t.Log(id)
 		}
 	}()
 
-	start := time.Now()
+	go func() {
+		for i := 4; i < 100; i++ {
+			GetSubscriber(fmt.Sprint("test-", i)).Global = true
+		}
+	}()
 
-	Update("others", []int64{1145141919810})
-
-	elapsed := time.Since(start)
-	b.Logf("took %s", elapsed)
-
+	<-time.After(time.Second * 5)
 }
