@@ -2,6 +2,7 @@ package websocket
 
 import (
 	"github.com/gorilla/websocket"
+	"strings"
 )
 
 type WriteBuffer struct {
@@ -33,9 +34,17 @@ func startWriter(identifier string) {
 		log.Infof("成功關閉用戶 %v 的寫入器", identifier)
 	}
 
-	log.Infof("為用戶 %v 啟動寫入器", identifier)
+	var buffer int
 
-	channel := make(chan *WriteBuffer, 150000)
+	if strings.HasSuffix(identifier, "global") {
+		buffer = 150000
+	} else {
+		buffer = 50000
+	}
+
+	channel := make(chan *WriteBuffer, buffer)
+
+	log.Infof("為用戶 %v 啟動寫入器, 緩衝大小為 %db", identifier, buffer)
 	channelMap[identifier] = channel
 	for {
 		select {
