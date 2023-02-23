@@ -41,27 +41,20 @@ func OpenGlobalWebSocket(c *gin.Context) {
 		return ws.WriteMessage(websocket.CloseMessage, nil)
 	})
 
-	globalWebSockets.Store(identifier, &WebSocket{ws: ws})
+	globalWebSockets.Store(identifier, ws)
+
+	go startWriter(identifier)
+
 }
 
-func writeGlobalMessage(identifier string, socket *WebSocket, data BLiveData) error {
+func writeGlobalMessage(identifier string, con *websocket.Conn, data BLiveData) error {
 
-	defer socket.mu.Unlock()
-	socket.mu.Lock()
-
-	con := socket.ws
 	byteData, err := json.Marshal(data)
 
 	if err != nil {
 		return err
 	}
 
-	if err = con.WriteMessage(websocket.TextMessage, byteData); err != nil {
-		log.Warnf("向 用戶 %v 發送直播數據時出現錯誤: (%T)%v\n", identifier, err, err)
-		log.Warnf("關閉對用戶 %v 的連線。", identifier)
-		_ = con.Close()
-		globalWebSockets.Delete(identifier)
-	}
-
+	go insertBuffer(identifier, con, byteData)
 	return nil
 }

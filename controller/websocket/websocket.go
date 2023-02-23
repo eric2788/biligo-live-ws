@@ -20,11 +20,6 @@ var (
 	log            = logrus.WithField("controller", "websocket")
 )
 
-type WebSocket struct {
-	ws *websocket.Conn
-	mu sync.Mutex
-}
-
 func Register(gp *gin.RouterGroup) {
 	gp.GET("", OpenWebSocket)
 	gp.GET("/global", OpenGlobalWebSocket)
@@ -63,7 +58,7 @@ func OpenWebSocket(c *gin.Context) {
 		return ws.WriteMessage(websocket.CloseMessage, nil)
 	})
 
-	websocketTable.Store(identifier, &WebSocket{ws: ws})
+	websocketTable.Store(identifier, ws)
 
 	// 先前尚未有訂閱
 	if _, subBefore := subscriber.Get(identifier); !subBefore {
@@ -73,6 +68,8 @@ func OpenWebSocket(c *gin.Context) {
 
 	// 中止五分鐘後清除訂閱記憶
 	subscriber.CancelExpire(identifier)
+
+	go startWriter(identifier)
 }
 
 func handleBLiveMessage(room int64, info *blive.LiveInfo, msg live.Msg) {
@@ -118,7 +115,7 @@ func handleBLiveMessage(room int64, info *blive.LiveInfo, msg live.Msg) {
 
 	// 全局用戶
 	globalWebSockets.Range(func(id, conn interface{}) bool {
-		if err := writeGlobalMessage(id.(string), conn.(*WebSocket), bLiveData); err != nil {
+		if err := writeGlobalMessage(id.(string), conn.(*websocket.Conn), bLiveData); err != nil {
 			log.Warnf("向 用戶 %v 發送直播數據時出現錯誤: (%T)%v\n", id, err, err)
 		}
 		return true
@@ -134,26 +131,15 @@ func writeMessage(identifier string, data BLiveData) error {
 		return nil
 	}
 
-	socket := conn.(*WebSocket)
+	con := conn.(*websocket.Conn)
 
-	defer socket.mu.Unlock()
-	socket.mu.Lock()
-
-	con := socket.ws
 	byteData, err := json.Marshal(data)
 
 	if err != nil {
 		return err
 	}
 
-	if err = con.WriteMessage(websocket.TextMessage, byteData); err != nil {
-		log.Warnf("向 用戶 %v 發送直播數據時出現錯誤: (%T)%v\n", identifier, err, err)
-		log.Warnf("關閉對用戶 %v 的連線。", identifier)
-		_ = con.Close()
-		// 客戶端非正常關閉連接
-		HandleClose(identifier)
-	}
-
+	go insertBuffer(identifier, con, byteData)
 	return nil
 }
 
