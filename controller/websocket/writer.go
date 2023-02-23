@@ -14,6 +14,11 @@ var (
 )
 
 func insertBuffer(identifier string, conn *websocket.Conn, buffer []byte) {
+
+	if _, ok := channelMap[identifier]; !ok {
+		return
+	}
+
 	channelMap[identifier] <- &WriteBuffer{
 		conn:   conn,
 		buffer: buffer,
