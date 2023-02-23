@@ -1,3 +1,5 @@
+## **__本项目将不再追加新功能，届时将使用 Rust 重写。__**
+
 # biligo-live-ws
 
 以 [bili-go](https://github.com/iyear/biligo-live) 为核心, 基于 JSON string 序列化 的 B站 WebSocket 监控服务器。
