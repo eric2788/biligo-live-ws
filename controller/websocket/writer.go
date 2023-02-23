@@ -31,7 +31,7 @@ func startWriter(identifier string) {
 		close(channelMap[identifier])
 		delete(channelMap, identifier)
 	}
-	channel := make(chan *WriteBuffer, 25000)
+	channel := make(chan *WriteBuffer, 65535)
 	channelMap[identifier] = channel
 	for {
 		select {
