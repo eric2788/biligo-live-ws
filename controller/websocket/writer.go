@@ -1,10 +1,7 @@
 package websocket
 
 import (
-	"github.com/eric2788/biligo-live-ws/services/blive"
-	"github.com/eric2788/biligo-live-ws/services/subscriber"
 	"github.com/gorilla/websocket"
-	"strings"
 )
 
 type WriteBuffer struct {
@@ -36,18 +33,9 @@ func startWriter(identifier string) {
 		log.Infof("成功關閉用戶 %v 的寫入器", identifier)
 	}
 
-	var buffer int
+	log.Infof("為用戶 %v 啟動寫入器", identifier)
 
-	if strings.HasSuffix(identifier, "global") {
-		buffer = len(blive.GetListening()) * 100
-	} else {
-		rooms, _ := subscriber.GetOrEmpty(identifier)
-		buffer = len(rooms) * 100
-	}
-
-	log.Infof("為用戶 %v 啟動寫入器，緩衝區大小為 %vb", identifier, buffer)
-
-	channel := make(chan *WriteBuffer, buffer)
+	channel := make(chan *WriteBuffer, 150000)
 	channelMap[identifier] = channel
 	for {
 		select {
