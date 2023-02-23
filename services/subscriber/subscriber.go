@@ -1,12 +1,10 @@
 package subscriber
 
 import (
-	"fmt"
 	"sync"
 	"time"
 
 	set "github.com/deckarep/golang-set/v2"
-	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 )
 
@@ -180,12 +178,4 @@ func ToSet[T comparable](arr []T) set.Set[T] {
 		s.Add(k)
 	}
 	return s
-}
-
-func ToClientId(c *gin.Context) string {
-	identifier := c.GetHeader("Authorization")
-	if identifier == "" {
-		identifier = "anonymous"
-	}
-	return fmt.Sprintf("%v@%v", c.ClientIP(), identifier)
 }

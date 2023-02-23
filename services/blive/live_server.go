@@ -9,13 +9,11 @@ import (
 	set "github.com/deckarep/golang-set/v2"
 
 	"net/http"
-	"os"
 	"strings"
 	"sync"
 	"time"
 
 	biligo "github.com/eric2788/biligo-live"
-	"github.com/eric2788/biligo-live-ws/services/api"
 	"github.com/gorilla/websocket"
 )
 
@@ -117,28 +115,6 @@ func LaunchLiveServer(
 		log.Error(err)
 	})
 
-	var wsHost = biligo.WsDefaultHost
-
-	// 如果有強制指定 ws host, 則使用
-	if strings.HasPrefix(os.Getenv("BILI_WS_HOST_FORCE"), "wss://") {
-
-		wsHost = os.Getenv("BILI_WS_HOST_FORCE")
-
-	} else if os.Getenv("BILI_WS_HOST_FORCE") == "AUTO" { // 否則從 api 獲取 host list 並提取低延遲
-
-		lowHost := api.GetLowLatencyHost(realRoom, false)
-
-		if lowHost == "" {
-			log.Warnf("[%v] 無法獲取低延遲 Host，將使用預設 Host", realRoom)
-		} else {
-			log.Debugf("[%v] 已採用 %v 作為低延遲 Host", realRoom, lowHost)
-			wsHost = lowHost
-		}
-
-	} // 否則繼續使用 biligo.WsDefaultHost
-
-	log.Debugf("[%v] 已採用 %v 作為直播 Host", realRoom, wsHost)
-
 	log.Debugf("[%v] 正在連接到彈幕伺服器...", room)
 
 	// 偽造 User-Agent 請求
@@ -147,7 +123,7 @@ func LaunchLiveServer(
 	header.Set("Referer", "https://live.bilibili.com/"+strconv.FormatInt(realRoom, 10))
 	header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
 
-	if err := live.ConnWithHeader(dialer, wsHost, header); err != nil {
+	if err := live.ConnWithHeader(dialer, biligo.WsDefaultHost, header); err != nil {
 		log.Warn("連接伺服器時出現錯誤: ", err)
 		finished(nil, err)
 		return
@@ -191,12 +167,6 @@ func LaunchLiveServer(
 						log.Infof("房間 %v 開播，正在更新直播資訊...\n", realRoom)
 						// 更新一次直播资讯
 						UpdateLiveInfo(liveInfo, realRoom)
-
-						if os.Getenv("BILI_WS_HOST_FORCE") != "" {
-							// 更新一次 WebSocket 資訊
-							go api.UpdateLowLatencyHost(realRoom)
-						}
-
 					}
 
 					// 但開播指令推送多次保留

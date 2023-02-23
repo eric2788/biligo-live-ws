@@ -12,7 +12,6 @@ import (
 )
 
 var (
-	Id  = subscriber.ToClientId
 	log = logrus.WithField("controller", "subscribe")
 )
 
@@ -25,7 +24,7 @@ func Register(gp *gin.RouterGroup) {
 }
 
 func GetSubscriptions(c *gin.Context) {
-	list, ok := subscriber.Get(Id(c))
+	list, ok := subscriber.Get(c.GetString("identifier"))
 	if !ok {
 		list = []int64{}
 	}
@@ -33,7 +32,7 @@ func GetSubscriptions(c *gin.Context) {
 }
 
 func ClearSubscribe(c *gin.Context) {
-	subscriber.Delete(Id(c))
+	subscriber.Delete(c.GetString("identifier"))
 	c.Status(200)
 }
 
@@ -46,11 +45,11 @@ func AddSubscribe(c *gin.Context) {
 		return
 	}
 
-	log.Infof("用戶 %v 新增訂閱 %v \n", Id(c), rooms)
+	log.Infof("用戶 %v 新增訂閱 %v \n", c.GetString("identifier"), rooms)
 
-	ActivateExpire(Id(c))
+	ActivateExpire(c.GetString("identifier"))
 
-	newRooms := subscriber.Add(Id(c), rooms)
+	newRooms := subscriber.Add(c.GetString("identifier"), rooms)
 	c.IndentedJSON(200, newRooms)
 }
 
@@ -62,9 +61,9 @@ func RemoveSubscribe(c *gin.Context) {
 		return
 	}
 
-	log.Infof("用戶 %v 移除訂閱 %v \n", Id(c), rooms)
+	log.Infof("用戶 %v 移除訂閱 %v \n", c.GetString("identifier"), rooms)
 
-	newRooms, ok := subscriber.Remove(Id(c), rooms)
+	newRooms, ok := subscriber.Remove(c.GetString("identifier"), rooms)
 
 	if !ok {
 		c.IndentedJSON(400, gin.H{"error": "刪除失敗，你尚未遞交過任何訂閱"})
@@ -82,11 +81,11 @@ func Subscribe(c *gin.Context) {
 		return
 	}
 
-	log.Infof("用戶 %v 設置訂閱 %v \n", Id(c), rooms)
+	log.Infof("用戶 %v 設置訂閱 %v \n", c.GetString("identifier"), rooms)
 
-	ActivateExpire(Id(c))
+	ActivateExpire(c.GetString("identifier"))
 
-	subscriber.Update(Id(c), rooms)
+	subscriber.Update(c.GetString("identifier"), rooms)
 	c.IndentedJSON(200, rooms)
 }
 
@@ -133,16 +132,7 @@ func GetSubscribesArr(c *gin.Context, checkExist bool) ([]int64, bool) {
 		}
 
 	}
-
-	// 有生之年我居然還要用 loop 轉泛型 array 同 type array, 醉了
-	roomArr := roomSet.ToSlice()
-	rooms := make([]int64, len(roomArr))
-
-	for i, v := range roomArr {
-		rooms[i] = v
-	}
-
-	return rooms, true
+	return roomSet.ToSlice(), true
 }
 
 func ActivateExpire(identifier string) {
