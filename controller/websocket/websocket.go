@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"sync"
 	"time"
 
 	live "github.com/eric2788/biligo-live"
@@ -12,11 +11,12 @@ import (
 	"github.com/eric2788/biligo-live-ws/services/subscriber"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
+	cmap "github.com/orcaman/concurrent-map/v2"
 	"github.com/sirupsen/logrus"
 )
 
 var (
-	websocketTable = sync.Map{}
+	websocketTable = cmap.New[*websocket.Conn]()
 	log            = logrus.WithField("controller", "websocket")
 )
 
@@ -58,7 +58,7 @@ func OpenWebSocket(c *gin.Context) {
 		return ws.WriteMessage(websocket.CloseMessage, nil)
 	})
 
-	websocketTable.Store(identifier, ws)
+	websocketTable.Set(identifier, ws)
 
 	// 先前尚未有訂閱
 	if _, subBefore := subscriber.Get(identifier); !subBefore {
@@ -66,9 +66,7 @@ func OpenWebSocket(c *gin.Context) {
 		subscriber.Update(identifier, []int64{})
 	}
 
-	// 中止五分鐘後清除訂閱記憶
-	subscriber.CancelExpire(identifier)
-
+	subscriber.AddConnected(identifier)
 	go startWriter(identifier)
 }
 
@@ -114,24 +112,21 @@ func handleBLiveMessage(room int64, info *blive.LiveInfo, msg live.Msg) {
 	}
 
 	// 全局用戶
-	globalWebSockets.Range(func(id, conn interface{}) bool {
-		if err := writeGlobalMessage(id.(string), conn.(*websocket.Conn), bLiveData); err != nil {
+	globalWebSockets.IterCb(func(id string, conn *websocket.Conn) {
+		if err := writeGlobalMessage(id, conn, bLiveData); err != nil {
 			log.Warnf("向 用戶 %v 發送直播數據時出現錯誤: (%T)%v\n", id, err, err)
 		}
-		return true
 	})
 
 }
 
 func writeMessage(identifier string, data BLiveData) error {
-	conn, ok := websocketTable.Load(identifier)
+	con, ok := websocketTable.Get(identifier)
 
 	if !ok {
 		//log.Infof("用戶 %v 尚未連接到WS，略過發送。\n", identifier)
 		return nil
 	}
-
-	con := conn.(*websocket.Conn)
 
 	byteData, err := json.Marshal(data)
 
@@ -144,10 +139,10 @@ func writeMessage(identifier string, data BLiveData) error {
 }
 
 func HandleClose(identifier string) {
-	websocketTable.Delete(identifier)
+	websocketTable.Remove(identifier)
+	subscriber.RemoveConnected(identifier)
 	// 等待五分鐘，如果五分鐘後沒有重連則刪除訂閱記憶
-	// 由於斷線的時候已經有訂閱列表，因此此方法不會檢查是否有訂閱列表
-	subscriber.ExpireAfterWithCheck(identifier, time.NewTimer(time.Minute*5), false)
+	subscriber.ExpireAfter(identifier, time.NewTimer(time.Minute*5))
 }
 
 type BLiveData struct {

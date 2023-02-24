@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"sync"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
+	cmap "github.com/orcaman/concurrent-map/v2"
 )
 
-var globalWebSockets = sync.Map{}
+var globalWebSockets = cmap.New[*websocket.Conn]()
 
 func OpenGlobalWebSocket(c *gin.Context) {
 
@@ -37,11 +37,11 @@ func OpenGlobalWebSocket(c *gin.Context) {
 	// 客戶端正常關閉連接
 	ws.SetCloseHandler(func(code int, text string) error {
 		log.Infof("已關閉對 %v 的 Websocket 連接: (%v) %v", identifier, code, text)
-		globalWebSockets.Delete(identifier)
+		globalWebSockets.Remove(identifier)
 		return ws.WriteMessage(websocket.CloseMessage, nil)
 	})
 
-	globalWebSockets.Store(identifier, ws)
+	globalWebSockets.Set(identifier, ws)
 
 	go startWriter(identifier)
 

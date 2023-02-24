@@ -78,20 +78,15 @@ func startWriter(identifier string) {
 
 	defer cancel()
 
-	for {
-		select {
-		case buffer, ok := <-channel:
-			if !ok {
-				return
-			}
-			if err := buffer.conn.WriteMessage(websocket.TextMessage, buffer.buffer); err != nil {
-				log.Warnf("向 用戶 %v 發送直播數據時出現錯誤: (%T)%v\n", identifier, err, err)
-				log.Warnf("關閉對用戶 %v 的連線。", identifier)
-				_ = buffer.conn.Close()
-				// 客戶端非正常關閉連接
-				HandleClose(identifier)
-				return
-			}
+	for buffer := range channel {
+		if err := buffer.conn.WriteMessage(websocket.TextMessage, buffer.buffer); err != nil {
+			log.Warnf("向 用戶 %v 發送直播數據時出現錯誤: (%T)%v\n", identifier, err, err)
+			log.Warnf("關閉對用戶 %v 的連線。", identifier)
+			_ = buffer.conn.Close()
+			// 客戶端非正常關閉連接
+			HandleClose(identifier)
+			channelMap.Remove(identifier)
+			return
 		}
 	}
 }

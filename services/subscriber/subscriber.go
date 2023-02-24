@@ -1,17 +1,17 @@
 package subscriber
 
 import (
-	"sync"
 	"time"
 
 	set "github.com/deckarep/golang-set/v2"
+	cmap "github.com/orcaman/concurrent-map/v2"
 	"github.com/sirupsen/logrus"
 )
 
 var (
 	queue        = set.NewSet[string]()
-	subscribeMap = sync.Map{}
-	expireMap    = sync.Map{}
+	expireSet    = set.NewSet[string]()
+	subscribeMap = cmap.New[[]int64]()
 	log          = logrus.WithField("service", "subscriber")
 )
 
@@ -20,65 +20,39 @@ func Update(identifier string, rooms []int64) {
 	log.Infof("%v 的訂閱更新已加入隊列...", identifier)
 	queue.Add(identifier)
 	go func() {
-		subscribeMap.Store(identifier, rooms)
+		subscribeMap.Set(identifier, rooms)
 		log.Infof("%v 的訂閱更新已完成。", identifier)
 		queue.Remove(identifier)
 	}()
 }
 
 func ExpireAfter(identifier string, timer *time.Timer) {
-	ExpireAfterWithCheck(identifier, timer, true)
-}
 
-func ExpireAfterWithCheck(identifier string, timer *time.Timer, checkExist bool) {
-
-	// 保險起見
-	if _, subBefore := subscribeMap.Load(identifier); subBefore && checkExist {
+	if connected.Contains(identifier) || expireSet.Contains(identifier) {
+		log.Debugf("用戶 %v 已連線或已設置過期。", identifier)
 		return
 	}
-
-	// 隊列內有，防止過期
-	if checkExist && queue.Contains(identifier) {
-		return
-	}
-
-	connected := make(chan struct{}, 1)
 
 	go func() {
 		defer timer.Stop()
-		for {
-			select {
-			case <-timer.C:
-				// 保險起見
-				if _, ok := expireMap.LoadAndDelete(identifier); !ok {
-					return
-				}
-				log.Infof("%v 的訂閱已過期。\n", identifier)
-				subscribeMap.Delete(identifier)
-				return
-			case <-connected:
-				log.Infof("已終止用戶 %v 的訂閱過期。", identifier)
-				return
-			}
+		<-timer.C
+
+		if connected.Contains(identifier) {
+			log.Infof("用戶 %v 已連接WS, 已終止其訂閱過期。", identifier)
+			return
 		}
+
+		log.Infof("%v 的訂閱已過期。\n", identifier)
+		subscribeMap.Remove(identifier)
 	}()
 
-	expireMap.Store(identifier, connected)
+	expireSet.Add(identifier)
 	log.Infof("已啟動用戶 %v 的訂閱過期。", identifier)
 }
 
-var void struct{}
-
-func CancelExpire(identifier string) {
-	if connected, ok := expireMap.LoadAndDelete(identifier); ok {
-		conn := connected.(chan struct{})
-		conn <- void
-	}
-}
-
 func Get(identifier string) ([]int64, bool) {
-	if res, ok := subscribeMap.Load(identifier); ok {
-		return res.([]int64), ok
+	if res, ok := subscribeMap.Get(identifier); ok {
+		return res, ok
 	} else {
 		return nil, ok
 	}
@@ -93,8 +67,8 @@ func GetOrEmpty(identifier string) ([]int64, bool) {
 }
 
 func Poll(identifier string) ([]int64, bool) {
-	if res, ok := subscribeMap.LoadAndDelete(identifier); ok {
-		return res.([]int64), ok
+	if res, ok := subscribeMap.Pop(identifier); ok {
+		return res, ok
 	} else {
 		return nil, ok
 	}
@@ -102,27 +76,24 @@ func Poll(identifier string) ([]int64, bool) {
 
 func GetAllRooms() set.Set[int64] {
 	rooms := set.NewSet[int64]()
-	subscribeMap.Range(func(key, value interface{}) bool {
-		for _, room := range value.([]int64) {
+	subscribeMap.IterCb(func(key string, value []int64) {
+		for _, room := range value {
 			rooms.Add(room)
 		}
-		return true
 	})
 	return rooms
 }
 
 func GetAllSubscribers(room int64) []string {
 	identifiers := make([]string, 0)
-	subscribeMap.Range(func(identifier, rooms interface{}) bool {
-		for _, rm := range rooms.([]int64) {
+	subscribeMap.IterCb(func(identifier string, rooms []int64) {
+		for _, rm := range rooms {
 			if room == rm {
-				identifiers = append(identifiers, identifier.(string))
+				identifiers = append(identifiers, identifier)
 				break
 			}
 		}
-		return true
 	})
-
 	return identifiers
 }
 
@@ -169,7 +140,7 @@ func Remove(identifier string, rooms []int64) ([]int64, bool) {
 }
 
 func Delete(identifier string) {
-	subscribeMap.Delete(identifier)
+	subscribeMap.Remove(identifier)
 }
 
 func ToSet[T comparable](arr []T) set.Set[T] {
