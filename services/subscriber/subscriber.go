@@ -28,6 +28,11 @@ func Update(identifier string, rooms []int64) {
 
 func ExpireAfter(identifier string, timer *time.Timer) {
 
+	if !subscribeMap.Has(identifier) {
+		log.Debugf("用戶 %v 未訂閱任何房間, 無需設置過期。", identifier)
+		return
+	}
+
 	if connected.Contains(identifier) || expireSet.Contains(identifier) {
 		log.Debugf("用戶 %v 已連線或已設置過期。", identifier)
 		return

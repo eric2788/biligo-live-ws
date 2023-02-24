@@ -133,10 +133,6 @@ func GetSubscribesArr(c *gin.Context, checkExist bool) ([]int64, bool) {
 }
 
 func ActivateExpire(identifier string) {
-	// 無訂閱者就不用設置
-	if _, sub := subscriber.Get(identifier); !sub {
-		return
-	}
 	// 設置如果五分鐘後尚未連線 WebSocket 就清除訂閱記憶
 	subscriber.ExpireAfter(identifier, time.NewTimer(time.Minute*5))
 }
