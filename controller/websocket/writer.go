@@ -1,36 +1,59 @@
 package websocket
 
 import (
-	"github.com/gorilla/websocket"
+	"context"
 	"strings"
+
+	"github.com/gorilla/websocket"
+	cmap "github.com/orcaman/concurrent-map/v2"
 )
 
-type WriteBuffer struct {
-	conn   *websocket.Conn
-	buffer []byte
-}
+type (
+	WsChannel struct {
+		writer chan *WriteBuffer
+		ctx    context.Context
+	}
+
+	WriteBuffer struct {
+		conn   *websocket.Conn
+		buffer []byte
+	}
+)
 
 var (
-	channelMap = make(map[string]chan *WriteBuffer)
+	channelMap = cmap.New[*WsChannel]()
 )
 
 func insertBuffer(identifier string, conn *websocket.Conn, buffer []byte) {
 
-	if _, ok := channelMap[identifier]; !ok {
+	defer func() {
+		if err := recover(); err != nil {
+			log.Errorf("panic when sending data to %s: %v", identifier, err)
+		}
+	}()
+
+	channel, ok := channelMap.Get(identifier)
+
+	if !ok {
 		return
 	}
 
-	channelMap[identifier] <- &WriteBuffer{
+	channel.writer <- &WriteBuffer{
 		conn:   conn,
 		buffer: buffer,
 	}
 }
 
 func startWriter(identifier string) {
-	if _, ok := channelMap[identifier]; ok {
-		// delete old
-		close(channelMap[identifier])
-		delete(channelMap, identifier)
+
+	if channel, ok := channelMap.Get(identifier); ok {
+
+		// delete first, then close channel
+		channelMap.Remove(identifier)
+		close(channel.writer)
+
+		// 等待上一个 writer 全部写入完毕
+		<-channel.ctx.Done()
 		log.Infof("成功關閉用戶 %v 的寫入器", identifier)
 	}
 
@@ -42,10 +65,19 @@ func startWriter(identifier string) {
 		buffer = 50000
 	}
 
+	ctx, cancel := context.WithCancel(context.Background())
+
 	channel := make(chan *WriteBuffer, buffer)
 
 	log.Infof("為用戶 %v 啟動寫入器, 緩衝大小為 %db", identifier, buffer)
-	channelMap[identifier] = channel
+
+	channelMap.Set(identifier, &WsChannel{
+		writer: channel,
+		ctx:    ctx,
+	})
+
+	defer cancel()
+
 	for {
 		select {
 		case buffer, ok := <-channel:

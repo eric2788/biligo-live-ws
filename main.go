@@ -3,8 +3,10 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/eric2788/biligo-live-ws/controller/listening"
 	"github.com/eric2788/biligo-live-ws/controller/subscribe"
@@ -40,6 +42,17 @@ func main() {
 	} else {
 		log.Info("數據庫已成功初始化。")
 	}
+
+	ts := time.Now().Format(time.DateTime)
+	// create log with unix timestamp
+	logFile, err := os.OpenFile("./cache/networkLog/"+ts+".log", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0775)
+	if err != nil {
+		log.Fatalf("创建 /cache/networkLog/%s.log 文件时错误: %v", ts, err)
+	}
+
+	mw := io.MultiWriter(os.Stdout, logFile)
+	log.SetOutput(mw)
+	gin.DefaultWriter = mw
 
 	router := gin.New()
 
