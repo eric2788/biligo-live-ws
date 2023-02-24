@@ -43,16 +43,18 @@ func main() {
 		log.Info("數據庫已成功初始化。")
 	}
 
-	ts := time.Now().Format("2006-01-02 15:04:05")
-	// create log with unix timestamp
-	logFile, err := os.Create("./cache/networkLog/" + ts + ".log")
-	if err != nil {
-		log.Fatalf("创建 /cache/networkLog/%s.log 文件时错误: %v", ts, err)
-	}
+	if os.Getenv("ENABLE_LOG_FILE") == "true" {
+		ts := time.Now().Format("2006-01-02 15:04:05")
+		// create log with unix timestamp
+		logFile, err := os.Create("./cache/networkLog/" + ts + ".log")
+		if err != nil {
+			log.Fatalf("创建 /cache/networkLog/%s.log 文件时错误: %v", ts, err)
+		}
 
-	mw := io.MultiWriter(os.Stdout, logFile)
-	log.SetOutput(mw)
-	gin.DefaultWriter = mw
+		mw := io.MultiWriter(os.Stdout, logFile)
+		log.SetOutput(mw)
+		gin.DefaultWriter = mw
+	}
 
 	router := gin.New()
 
