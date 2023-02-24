@@ -46,10 +46,8 @@ func AddSubscribe(c *gin.Context) {
 	}
 
 	log.Infof("用戶 %v 新增訂閱 %v \n", c.GetString("identifier"), rooms)
-
-	ActivateExpire(c.GetString("identifier"))
-
 	newRooms := subscriber.Add(c.GetString("identifier"), rooms)
+	go ActivateExpire(c.GetString("identifier"))
 	c.IndentedJSON(200, newRooms)
 }
 
@@ -83,9 +81,8 @@ func Subscribe(c *gin.Context) {
 
 	log.Infof("用戶 %v 設置訂閱 %v \n", c.GetString("identifier"), rooms)
 
-	ActivateExpire(c.GetString("identifier"))
-
 	subscriber.Update(c.GetString("identifier"), rooms)
+	go ActivateExpire(c.GetString("identifier"))
 	c.IndentedJSON(200, rooms)
 }
 
@@ -136,9 +133,10 @@ func GetSubscribesArr(c *gin.Context, checkExist bool) ([]int64, bool) {
 }
 
 func ActivateExpire(identifier string) {
-	// 如果之前尚未有過訂閱 (即新增而不是更新)
-	if _, subBefore := subscriber.Get(identifier); !subBefore {
-		// 設置如果五分鐘後尚未連線 WebSocket 就清除訂閱記憶
-		subscriber.ExpireAfter(identifier, time.NewTimer(time.Minute*5))
+	// 無訂閱者就不用設置
+	if _, sub := subscriber.Get(identifier); !sub {
+		return
 	}
+	// 設置如果五分鐘後尚未連線 WebSocket 就清除訂閱記憶
+	subscriber.ExpireAfter(identifier, time.NewTimer(time.Minute*5))
 }
