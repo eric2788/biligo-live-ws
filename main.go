@@ -43,7 +43,7 @@ func main() {
 		log.Info("數據庫已成功初始化。")
 	}
 
-	ts := time.Now().Format(time.DateTime)
+	ts := time.Now().Format("2006-01-02 15:04:05")
 	// create log with unix timestamp
 	logFile, err := os.OpenFile("./cache/networkLog/"+ts+".log", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0775)
 	if err != nil {
