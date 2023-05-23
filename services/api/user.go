@@ -1,16 +1,21 @@
 package api
 
 import (
+	"crypto/md5"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/eric2788/biligo-live-ws/services/database"
 	"io"
 	"strings"
-
-	"github.com/eric2788/biligo-live-ws/services/database"
+	"time"
 )
 
-const UserInfoApi = "https://api.bilibili.com/x/space/acc/info?mid=%v&jsonp=jsonp"
+const (
+	UserInfoApi    = "https://api.bilibili.com/x/space/acc/info?mid=%v&jsonp=jsonp" // this api url is not valid anymore
+	UserInfoApiNew = "https://api.bilibili.com/x/space/wbi/acc/info?mid=%d&platform=web&token=&web_location=1550101&wts=%d&w_rid=%s"
+)
 
 var (
 	ErrCacheNotFound = errors.New("緩存不存在")
@@ -32,6 +37,14 @@ func GetUserInfoCache(uid int64) (*UserInfo, error) {
 	}
 }
 
+func wRid(uid, wts int64) string { // 时间戳
+	c := "72136226c6a73669787ee4fd02a74c27" // 尾部固定值，根据imgKey,subKey计算得出
+	b := "mid=" + fmt.Sprint(uid) + "&platform=web&token=&web_location=1550101"
+	a := b + "&wts=" + fmt.Sprint(wts) + c // mid + platform + token + web_location + 时间戳wts + 一个固定值
+	hash := md5.Sum([]byte(a))
+	return hex.EncodeToString(hash[:])
+}
+
 func GetUserInfo(uid int64, forceUpdate bool) (*UserInfo, error) {
 
 	dbKey := fmt.Sprintf("user:%v", uid)
@@ -48,7 +61,9 @@ func GetUserInfo(uid int64, forceUpdate bool) (*UserInfo, error) {
 		}
 	}
 
-	resp, err := getWithAgent(UserInfoApi, uid)
+	timestamp := time.Now().UnixMilli()
+
+	resp, err := getWithAgent(UserInfoApiNew, uid, timestamp, wRid(uid, timestamp))
 	if err != nil {
 		return nil, err
 	}
