@@ -1,9 +1,8 @@
 package api
 
 import (
-	"encoding/json"
 	"fmt"
-	"io"
+	"github.com/eric2788/common-services/bilibili"
 	"strings"
 
 	"github.com/eric2788/biligo-live-ws/services/database"
@@ -12,17 +11,15 @@ import (
 
 var log = logrus.WithField("service", "api")
 
-const RoomInfoApi string = "https://api.live.bilibili.com/room/v1/Room/get_info?room_id=%v"
-
-func GetRoomInfo(room int64) (*RoomInfo, error) {
+func GetRoomInfo(room int64) (*bilibili.RoomInfo, error) {
 	return GetRoomInfoWithOption(room, false)
 }
 
-func GetRoomInfoCache(room int64) (*RoomInfo, error) {
+func GetRoomInfoCache(room int64) (*bilibili.RoomInfo, error) {
 
 	dbKey := fmt.Sprintf("room:%v", room)
 
-	var roomInfo = &RoomInfo{}
+	var roomInfo = &bilibili.RoomInfo{}
 	if err := database.GetFromDB(dbKey, roomInfo); err == nil {
 		return roomInfo, nil
 	} else {
@@ -35,7 +32,7 @@ func GetRoomInfoCache(room int64) (*RoomInfo, error) {
 
 }
 
-func GetRoomInfoWithOption(room int64, forceUpdate bool) (*RoomInfo, error) {
+func GetRoomInfoWithOption(room int64, forceUpdate bool) (*bilibili.RoomInfo, error) {
 
 	dbKey := fmt.Sprintf("room:%v", room)
 
@@ -51,31 +48,8 @@ func GetRoomInfoWithOption(room int64, forceUpdate bool) (*RoomInfo, error) {
 		}
 	}
 
-	resp, err := getWithAgent(RoomInfoApi, room)
+	roomInfo, err := bilibili.GetRoomInfo(room)
 	if err != nil {
-		return nil, err
-	}
-
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-
-	if err != nil {
-		return nil, err
-	}
-
-	var v1resp V1Resp
-
-	if err := json.Unmarshal(body, &v1resp); err != nil {
-		return nil, err
-	}
-
-	if v1resp.Code != 0 {
-		return &RoomInfo{V1Resp: v1resp}, nil
-	}
-
-	var roomInfo RoomInfo
-	if err := json.Unmarshal(body, &roomInfo); err != nil {
 		return nil, err
 	}
 
@@ -86,7 +60,7 @@ func GetRoomInfoWithOption(room int64, forceUpdate bool) (*RoomInfo, error) {
 	} else {
 		log.Debugf("房間資訊 %v 更新到數據庫成功", room)
 	}
-	return &roomInfo, nil
+	return roomInfo, nil
 
 }
 
