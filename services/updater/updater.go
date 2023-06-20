@@ -3,17 +3,18 @@ package updater
 import (
 	"context"
 	"encoding/json"
+	"github.com/rogpeppe/go-internal/semver"
 	"github.com/sirupsen/logrus"
 	"io"
 	"net/http"
-	"strings"
 	"time"
 )
 
 const (
-	VersionTag = "0.1.14"
-	repoUrl    = "https://api.github.com/repos/eric2788/biligo-live-ws/releases/latest"
+	repoUrl = "https://api.github.com/repos/eric2788/biligo-live-ws/releases/latest"
 )
+
+var VersionTag string
 
 var (
 	log = logrus.WithField("service", "updater")
@@ -31,9 +32,8 @@ func StartUpdater() {
 			if resp, err := checkForUpdates(); err != nil {
 				log.Warnf("檢查更新時出現錯誤: %v", err)
 			} else {
-				version := strings.Replace(resp.TagName, "v", "", -1)
-				if version > VersionTag && !resp.Prerelease {
-					log.Infof("有可用新版本: %s", version)
+				if semver.Compare(resp.TagName, VersionTag) > 0 && !resp.Prerelease {
+					log.Infof("有可用新版本: %s", resp.TagName)
 					log.Infof("請自行到 %v 下載。", resp.HtmlUrl)
 				} else {
 					log.Infof("你目前已是最新版本。")

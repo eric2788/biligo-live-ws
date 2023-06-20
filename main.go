@@ -22,11 +22,14 @@ import (
 var release = flag.Bool("release", os.Getenv("GIN_MODE") == "release", "set release mode")
 var port = flag.Int("port", 8080, "set the websocket port")
 
+var version string
+
 func main() {
 
 	flag.Parse()
 
-	log.Infof("biligo-live-ws v%v", updater.VersionTag)
+	updater.VersionTag = version
+	log.Infof("biligo-live-ws %v", version)
 
 	if *release {
 		gin.SetMode(gin.ReleaseMode)

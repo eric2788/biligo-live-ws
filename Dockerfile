@@ -4,9 +4,11 @@ WORKDIR /app
 
 COPY . .
 
+ARG VERSION
+
 RUN go mod download
 
-RUN go build -o /go/bin/blive
+RUN go build -ldflags "-X updater.VersionTag=$VERSION" -o /go/bin/blive
 
 FROM alpine:latest
 

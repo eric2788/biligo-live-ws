@@ -7,7 +7,7 @@ env:
 on:
   push:
     tags:
-      - '*'
+      - 'v*.*.*'
     branches:
       - master
 
@@ -60,3 +60,5 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           platforms: linux/arm64/v8, linux/amd64
+          build-args: |
+              VERSION=${{ github.ref_name }}
