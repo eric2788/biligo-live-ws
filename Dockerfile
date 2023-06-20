@@ -8,7 +8,7 @@ ARG VERSION
 
 RUN go mod download
 
-RUN go build -ldflags "-X updater.VersionTag=$VERSION" -o /go/bin/blive
+RUN go build -ldflags "-X main.version=$VERSION" -o /go/bin/blive
 
 FROM alpine:latest
 
